@@ -1,0 +1,46 @@
+services:
+  # PostgreSQL 16 Database with extensions (uuid-ossp, pgcrypto, pg_trgm)
+  postgres:
+    image: postgres:16-alpine
+    container_name: cid_udb_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: cid_udb_db
+      POSTGRES_USER: cid_udb_user
+      POSTGRES_PASSWORD: cid_udb_secure_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cid_udb_user -d cid_udb_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Express REST API Server
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: cid_udb_api
+    restart: unless-stopped
+    ports:
+      - "5050:5050"
+    environment:
+      PORT: 5050
+      NODE_ENV: production
+      JWT_SECRET: cid_bangladesh_secret_key_2026_udb_jwt_production
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: cid_udb_user
+      DB_PASSWORD: cid_udb_secure_password
+      DB_NAME: cid_udb_db
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+
