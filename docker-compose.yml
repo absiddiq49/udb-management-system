@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_DB: cid_udb_db
       POSTGRES_USER: cid_udb_user
-      POSTGRES_PASSWORD: cid_udb_secure_password
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in the .env file}
     ports:
       - "5432:5432"
     volumes:
@@ -31,11 +31,13 @@ services:
     environment:
       PORT: 5050
       NODE_ENV: production
-      JWT_SECRET: cid_bangladesh_secret_key_2026_udb_jwt_production
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in the .env file}
+      CORS_ORIGIN: ${CORS_ORIGIN:-}
+      ALLOW_DEMO_DATA: ${ALLOW_DEMO_DATA:-false}
       DB_HOST: postgres
       DB_PORT: 5432
       DB_USER: cid_udb_user
-      DB_PASSWORD: cid_udb_secure_password
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in the .env file}
       DB_NAME: cid_udb_db
     depends_on:
       postgres:

@@ -50,3 +50,13 @@ server/node_modules/
 
 # Widget Preview related
 .widget_preview/
+
+# Secrets & Node
+.env
+server/.env
+node_modules/
+server/node_modules/
+
+# Build output
+android/build/
+build/

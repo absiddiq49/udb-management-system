@@ -7,6 +7,11 @@ const requestController = require('../controllers/requestController');
 const officialController = require('../controllers/officialController');
 const crossMatchController = require('../controllers/crossMatchController');
 const { requireAuth } = require('../middleware/auth');
+const { rateLimit } = require('../middleware/security');
+
+const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: 'Too many login attempts. Try again in 15 minutes.' });
+const submitLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 15 });
+const searchLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 60 });
 
 // ==========================================
 // 1. PUBLIC CITIZEN ENDPOINTS (Tier 0 - No Auth)
@@ -19,16 +24,16 @@ router.get('/public/records', publicController.getCases);
 router.get('/public/records/:ref', publicController.getCaseByRef);
 
 // Submit Citizen Tip / Recognition Lead
-router.post('/public/tips', publicController.submitCitizenTip);
+router.post('/public/tips', submitLimiter, publicController.submitCitizenTip);
 
 // Report Found Body / Human Remains (Emergency Intake)
-router.post('/public/reports', publicController.submitCitizenReport);
+router.post('/public/reports', submitLimiter, publicController.submitCitizenReport);
 
 // Submit External IO Data Access Request
-router.post('/public/io-requests', requestController.submitIoRequest);
+router.post('/public/io-requests', submitLimiter, requestController.submitIoRequest);
 
 // Cross-Match Engine (Accessible for public relatives searching missing persons)
-router.post('/public/cross-match', crossMatchController.executeCrossMatch);
+router.post('/public/cross-match', searchLimiter, crossMatchController.executeCrossMatch);
 
 // System KPI Statistics Strip
 router.get('/public/kpis', publicController.getStatistics);
@@ -39,10 +44,10 @@ router.get('/public/kpis', publicController.getStatistics);
 // ==========================================
 
 // Police Officer Username/Password Login (CID & Station Officers)
-router.post('/auth/login', authController.login);
+router.post('/auth/login', loginLimiter, authController.login);
 
 // Validate 72h External IO Pass Token
-router.post('/auth/validate-token', authController.tokenLogin);
+router.post('/auth/validate-token', loginLimiter, authController.tokenLogin);
 
 // Verify active session & role
 router.get('/auth/me', requireAuth(), authController.getMe);
@@ -83,5 +88,8 @@ router.get('/official/citizen-reports', requireAuth([3, 4, 5]), requestControlle
 
 // List Relative Match Tips
 router.get('/official/citizen-tips', requireAuth([3, 4, 5]), requestController.listCitizenTips);
+
+// Audit trail (Tier 5: CIB admin only)
+router.get('/official/audit-logs', requireAuth([5]), officialController.listAuditLogs);
 
 module.exports = router;

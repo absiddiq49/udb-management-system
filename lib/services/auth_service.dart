@@ -3,6 +3,10 @@ import '../core/constants/mock_data.dart';
 import '../models/official_access_request.dart';
 
 class AuthService {
+  // DEMO ONLY: the app currently runs on local mock data. When the REST API is
+  // connected, password verification must move to the server.
+  static const String _demoPassword = 'police123';
+
   UserSession _currentUser = UserSession.guest();
 
   UserSession get currentUser => _currentUser;
@@ -16,6 +20,10 @@ class AuthService {
       orElse: () => throw Exception('Invalid credentials or unauthorized police ID'),
     );
 
+    if (password != _demoPassword) {
+      throw Exception('Invalid credentials or unauthorized police ID');
+    }
+
     _currentUser = match;
     return _currentUser;
   }
@@ -28,12 +36,9 @@ class AuthService {
     // Check if token matches an approved request
     final req = approvedRequests.firstWhere(
       (r) => r.isApproved && r.accessToken?.toUpperCase() == cleanToken,
-      orElse: () {
-        if (cleanToken == 'DEMO-IO-PASS' || cleanToken == 'CID-PASS-7849-KM') {
-          return approvedRequests.first;
-        }
-        throw Exception('Invalid or expired access token. Please check your token or submit a new IO Access Request.');
-      },
+      orElse: () => throw Exception(
+        'Invalid or expired access token. Please check your token or submit a new IO Access Request.',
+      ),
     );
 
     _currentUser = UserSession(

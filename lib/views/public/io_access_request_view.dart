@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/constants/app_constants.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
@@ -435,6 +436,7 @@ class _IoAccessRequestViewState extends State<IoAccessRequestView> {
             style: TextStyle(color: textSec, fontSize: 13, height: 1.5),
           ),
           const SizedBox(height: 20),
+          if (AppConstants.demoMode)
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -465,12 +467,14 @@ class _IoAccessRequestViewState extends State<IoAccessRequestView> {
                 onPressed: widget.onCancel,
                 child: const Text('Back to Home'),
               ),
+              if (AppConstants.demoMode) ...[
               const SizedBox(width: 16),
               ElevatedButton.icon(
                 onPressed: () => widget.onSwitchToLogin('CID-PASS-7849-KM'),
                 icon: const Icon(Icons.login, size: 16),
                 label: const Text('Test Login with Token'),
               ),
+              ],
             ],
           ),
         ],

@@ -265,14 +265,30 @@ const initialCases = [
   },
 ];
 
+const isProd = process.env.NODE_ENV === 'production';
+const allowDemoData = !isProd || process.env.ALLOW_DEMO_DATA === 'true';
+
+const cases = allowDemoData ? [...initialCases] : [];
+const requests = allowDemoData ? [...initialRequests] : [];
+const tips = [];
+
+// Demo pass: valid for 14 days from server start (only when demo data is allowed).
+for (const r of requests) {
+  if (r.status === 'approved' && r.accessToken) {
+    r.expiresAt = new Date(Date.now() + 14 * 24 * 3600 * 1000).toISOString();
+  }
+}
+
 const store = {
-  users: [...initialUsers],
-  cases: [...initialCases],
-  requests: [...initialRequests],
-  citizenReports: [...initialCitizenReports],
-  tips: [],
+  users: allowDemoData ? [...initialUsers] : [],
+  cases,
+  records: cases, // same array: public and official views always stay in sync
+  requests,
+  ioRequests: requests, // same array
+  citizenReports: allowDemoData ? [...initialCitizenReports] : [],
+  tips,
+  citizenTips: tips, // same array
   auditLogs: [],
 };
 
 module.exports = store;
-

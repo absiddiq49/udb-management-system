@@ -1,4 +1,5 @@
-const { store } = require('../db/store');
+const store = require('../db/store');
+const audit = require('../utils/audit');
 
 // Get unredacted official dossier (Requires Tier 1-5)
 exports.getOfficialDossier = (req, res) => {
@@ -9,15 +10,15 @@ exports.getOfficialDossier = (req, res) => {
     return res.status(404).json({ success: false, error: 'Deceased record not found.' });
   }
 
-  // If officer is an external IO (Tier 1), ensure they only access their approved case
-  if (req.user && req.user.tier === 1 && req.user.targetCaseReference) {
-    if (req.user.targetCaseReference !== record.referenceNo) {
-      return res.status(403).json({
-        success: false,
-        error: `Access restricted. Your IO token is restricted to case ${req.user.targetCaseReference}`,
-      });
-    }
+  // External IOs (Tier 1) may only open the single case their pass was approved for
+  if (req.user.tier === 1 && req.user.targetCaseReference !== record.referenceNo) {
+    return res.status(403).json({
+      success: false,
+      error: 'Access restricted to the case your pass was approved for.',
+    });
   }
+
+  audit.log(req, 'VIEW_DOSSIER', record.referenceNo);
 
   // Add watermarking header information
   const auditStamp = {
@@ -99,6 +100,7 @@ exports.createRecord = (req, res) => {
   };
 
   store.records.unshift(newRecord);
+  audit.log(req, 'CREATE_RECORD', refNo);
 
   res.status(201).json({
     success: true,
@@ -117,7 +119,11 @@ exports.updateCaseStatus = (req, res) => {
     return res.status(404).json({ success: false, error: 'Deceased record not found.' });
   }
 
-  record.status = status || record.status;
+  if (typeof status !== 'string' || !status.trim() || status.length > 100) {
+    return res.status(400).json({ success: false, error: 'A valid status is required.' });
+  }
+  record.status = status.trim();
+  audit.log(req, 'UPDATE_STATUS', record.referenceNo);
   if (statusNotes) {
     record.statusNotes = statusNotes;
   }
@@ -160,3 +166,9 @@ exports.addDocument = (req, res) => {
   });
 };
 
+
+// Audit trail (Tier 5 only)
+exports.listAuditLogs = (req, res) => {
+  const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 100, 1), 500);
+  res.json({ success: true, total: store.auditLogs.length, data: store.auditLogs.slice(0, limit) });
+};

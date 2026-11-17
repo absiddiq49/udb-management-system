@@ -1,136 +1,103 @@
-const { store } = require('../db/store');
+const crypto = require('crypto');
+const store = require('../db/store');
+const audit = require('../utils/audit');
 
-// External IO Access Request Submission (Public endpoint)
+const clean = (v, max = 300) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
+
+// External IO Access Request Submission (public endpoint)
 exports.submitIoRequest = (req, res) => {
-  const {
-    officerName,
-    bpNumber,
-    designation,
-    policeUnit,
-    district,
-    phone,
-    email,
-    caseGrounds,
-    requestedCaseReference,
-  } = req.body;
+  const b = req.body || {};
+  const officerName = clean(b.officerName, 120);
+  const bpNumber = clean(b.bpNumber, 40);
+  const contactPhone = clean(b.phone || b.contactPhone, 30);
+  const targetCaseReference = clean(b.requestedCaseReference || b.targetCaseReference, 60);
 
-  if (!officerName || !bpNumber || !requestedCaseReference || !phone) {
+  if (!officerName || !bpNumber || !contactPhone || !targetCaseReference) {
     return res.status(400).json({
       success: false,
-      error: 'officerName, bpNumber, requestedCaseReference, and phone are mandatory fields.',
+      error: 'officerName, bpNumber, phone and requestedCaseReference are mandatory fields.',
     });
   }
 
-  const reqId = `req_${Date.now()}`;
-  const trackingCode = `REQ-2026-${Math.floor(1000 + Math.random() * 9000)}`;
-
-  const newRequest = {
-    id: reqId,
-    trackingCode,
+  const requestCode = `REQ-2026-${(1000 + store.requests.length + 1).toString()}`;
+  const request = {
+    id: `req_${crypto.randomUUID()}`,
+    requestCode,
     officerName,
+    officerRank: clean(b.designation || b.officerRank, 80) || 'Sub-Inspector',
     bpNumber,
-    designation: designation || 'Sub-Inspector',
-    policeUnit: policeUnit || 'Thana Investigation',
-    district: district || 'Dhaka',
-    phone,
-    email: email || '',
-    caseGrounds: caseGrounds || '',
-    requestedCaseReference,
-    status: 'PENDING_VERIFICATION',
-    assignedToken: null,
-    submittedAt: new Date().toISOString(),
-    reviewedAt: null,
-    reviewedBy: null,
+    postingUnit: clean(b.policeUnit || b.postingUnit, 160) || 'Thana Investigation',
+    contactPhone,
+    officialEmail: clean(b.email || b.officialEmail, 160),
+    targetCaseReference,
+    investigationGdFir: clean(b.investigationGdFir, 160),
+    reasonForAccess: clean(b.caseGrounds || b.reasonForAccess, 1500),
+    status: 'pending',
+    requestedAt: new Date().toISOString(),
   };
 
-  store.ioRequests.unshift(newRequest);
-
-  res.status(201).json({
+  store.requests.unshift(request);
+  return res.status(201).json({
     success: true,
-    data: newRequest,
+    data: { requestCode, status: request.status },
     message: 'IO access request submitted. Awaiting Central Intelligence Bureau verification.',
   });
 };
 
-// List all IO requests (Official Tier 1-5)
 exports.listIoRequests = (req, res) => {
-  res.json({
-    success: true,
-    data: store.ioRequests,
-    total: store.ioRequests.length,
-  });
+  res.json({ success: true, data: store.requests, total: store.requests.length });
 };
 
-// Approve an IO access request and issue a 72-hour pass token (Tier 3-5 only)
+function findRequest(id) {
+  return store.requests.find((r) => r.id === id || r.requestCode === id);
+}
+
+// Approve a pending request and issue a 72-hour pass (Tier 3-5 only)
 exports.approveIoRequest = (req, res) => {
-  const { id } = req.params;
-  const request = store.ioRequests.find((r) => r.id === id || r.trackingCode === id);
-
-  if (!request) {
-    return res.status(404).json({ success: false, error: 'IO Request not found.' });
+  const request = findRequest(req.params.id);
+  if (!request) return res.status(404).json({ success: false, error: 'IO Request not found.' });
+  if (request.status !== 'pending') {
+    return res.status(409).json({ success: false, error: `Request is already ${request.status}.` });
   }
 
-  const tokenSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
-  const token = `CID-PASS-${Math.floor(1000 + Math.random() * 9000)}-${tokenSuffix}`;
+  const hex = crypto.randomBytes(8).toString('hex').toUpperCase(); // 64 bits of randomness
+  const token = `CID-PASS-${hex.match(/.{4}/g).join('-')}`;
 
-  request.status = 'APPROVED';
-  request.assignedToken = token;
+  request.status = 'approved';
+  request.accessToken = token;
+  request.expiresAt = new Date(Date.now() + 72 * 3600 * 1000).toISOString();
+  request.tokenExpiresAt = request.expiresAt;
   request.reviewedAt = new Date().toISOString();
-  request.reviewedBy = req.user ? `${req.user.fullName} (${req.user.bpNumber})` : 'SP CIB HQ';
+  request.reviewedBy = `${req.user.fullName} (${req.user.bpNumber})`;
 
-  // Register the token in the store so the IO can log in with it
-  store.validIoTokens[token] = {
-    targetCaseReference: request.requestedCaseReference,
-    officerName: request.officerName,
-    bpNumber: request.bpNumber,
-    unit: request.policeUnit,
-    expiresAt: new Date(Date.now() + 72 * 3600 * 1000).toISOString(),
-  };
-
+  audit.log(req, 'IO_REQUEST_APPROVED', request.requestCode);
   res.json({
     success: true,
     data: request,
-    message: `Access approved. Token ${token} generated and dispatched via police SMS gateway.`,
+    message: 'Access approved. Send the pass to the officer through an official channel.',
   });
 };
 
-// Reject an IO access request
 exports.rejectIoRequest = (req, res) => {
-  const { id } = req.params;
-  const { reason } = req.body;
-  const request = store.ioRequests.find((r) => r.id === id || r.trackingCode === id);
-
-  if (!request) {
-    return res.status(404).json({ success: false, error: 'IO Request not found.' });
+  const request = findRequest(req.params.id);
+  if (!request) return res.status(404).json({ success: false, error: 'IO Request not found.' });
+  if (request.status !== 'pending') {
+    return res.status(409).json({ success: false, error: `Request is already ${request.status}.` });
   }
 
-  request.status = 'REJECTED';
+  request.status = 'rejected';
   request.reviewedAt = new Date().toISOString();
-  request.reviewedBy = req.user ? `${req.user.fullName} (${req.user.bpNumber})` : 'SP CIB HQ';
-  request.rejectionReason = reason || 'Insufficient jurisdictional grounds provided.';
+  request.reviewedBy = `${req.user.fullName} (${req.user.bpNumber})`;
+  request.reviewNotes = clean((req.body || {}).reason, 500) || 'Insufficient jurisdictional grounds provided.';
 
-  res.json({
-    success: true,
-    data: request,
-    message: 'IO Request rejected.',
-  });
+  audit.log(req, 'IO_REQUEST_REJECTED', request.requestCode);
+  res.json({ success: true, data: request, message: 'IO Request rejected.' });
 };
 
-// List Citizen Reports (Official)
 exports.listCitizenReports = (req, res) => {
-  res.json({
-    success: true,
-    data: store.citizenReports,
-    total: store.citizenReports.length,
-  });
+  res.json({ success: true, data: store.citizenReports, total: store.citizenReports.length });
 };
 
-// List Citizen Relative Match Tips (Official)
 exports.listCitizenTips = (req, res) => {
-  res.json({
-    success: true,
-    data: store.citizenTips,
-    total: store.citizenTips.length,
-  });
+  res.json({ success: true, data: store.tips, total: store.tips.length });
 };
-

@@ -1,6 +1,13 @@
 const jwt = require('jsonwebtoken');
+const { JWT_SECRET } = require('../config');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'cid_bangladesh_secret_key_2026_udb';
+// Clearance tier per role (used by requireAuth([...tiers]) in routes/api.js)
+const ROLE_TIERS = {
+  external_io: 1,
+  forensic_expert: 2,
+  cid_officer: 3,
+  cib_admin: 5,
+};
 
 function requireAuth(allowedTiers = []) {
   return (req, res, next) => {
@@ -16,26 +23,18 @@ function requireAuth(allowedTiers = []) {
     try {
       const decoded = jwt.verify(token, JWT_SECRET);
       req.user = decoded;
-
-      if (allowedTiers.length > 0 && !allowedTiers.includes(decoded.tier)) {
-        return res.status(403).json({
-          success: false,
-          error: `Access denied. Requires one of clearance tiers: ${allowedTiers.join(', ')}. Your tier: ${decoded.tier}`,
-        });
-      }
-
-      next();
     } catch (err) {
       return res.status(401).json({
         success: false,
         error: 'Invalid or expired session token. Please re-authenticate.',
       });
     }
+
+    if (allowedTiers.length > 0 && !allowedTiers.includes(req.user.tier)) {
+      return res.status(403).json({ success: false, error: 'Access denied for your clearance level.' });
+    }
+    return next();
   };
 }
 
-module.exports = {
-  requireAuth,
-  JWT_SECRET,
-};
-
+module.exports = { requireAuth, ROLE_TIERS };

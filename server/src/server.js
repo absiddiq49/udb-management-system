@@ -1,15 +1,19 @@
-require('dotenv').config();
+const { isProd, CORS_ORIGINS } = require('./config');
 const express = require('express');
 const cors = require('cors');
 const apiRoutes = require('./routes/api');
+const { securityHeaders } = require('./middleware/security');
 
 const app = express();
 const PORT = process.env.PORT || 5050;
 
 // Middleware
-app.use(cors());
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+app.disable('x-powered-by');
+app.use(securityHeaders);
+// Development: any origin. Production: only the origins listed in CORS_ORIGIN.
+app.use(cors({ origin: CORS_ORIGINS.length ? CORS_ORIGINS : !isProd }));
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // Request Logger
 app.use((req, res, next) => {
@@ -44,11 +48,14 @@ app.use((req, res) => {
 
 // Global Error Handler
 app.use((err, req, res, next) => {
+  if (err.type === 'entity.parse.failed') {
+    return res.status(400).json({ success: false, error: 'Malformed JSON body.' });
+  }
   console.error('[API Error]:', err);
   res.status(500).json({
     success: false,
     error: 'Internal Server Error. Please contact CID Central Intelligence Bureau IT Wing.',
-    details: process.env.NODE_ENV === 'production' ? undefined : err.message,
+    details: isProd ? undefined : err.message,
   });
 });
 

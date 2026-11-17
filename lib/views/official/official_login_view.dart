@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/constants/app_constants.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
@@ -23,8 +24,10 @@ class OfficialLoginView extends StatefulWidget {
 
 class _OfficialLoginViewState extends State<OfficialLoginView> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final _usernameController = TextEditingController(text: 'cib_supervisor');
-  final _passwordController = TextEditingController(text: 'police123');
+  final _usernameController =
+      TextEditingController(text: AppConstants.demoMode ? 'cib_supervisor' : '');
+  final _passwordController =
+      TextEditingController(text: AppConstants.demoMode ? 'police123' : '');
   late TextEditingController _tokenController;
 
   @override
@@ -204,6 +207,7 @@ class _OfficialLoginViewState extends State<OfficialLoginView> with SingleTicker
                   ),
                 ),
 
+                if (AppConstants.demoMode) ...[
                 const SizedBox(height: 16),
                 const Divider(),
                 const SizedBox(height: 12),
@@ -239,6 +243,7 @@ class _OfficialLoginViewState extends State<OfficialLoginView> with SingleTicker
                     }),
                   ],
                 ),
+                ],
 
                 const SizedBox(height: 20),
 

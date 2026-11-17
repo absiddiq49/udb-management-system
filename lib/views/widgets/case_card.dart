@@ -48,7 +48,7 @@ class CaseCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: MainAxisSize.max,
           children: [
             // Media Header
             if (record.primaryPhoto != null)
@@ -61,7 +61,7 @@ class CaseCard extends StatelessWidget {
               )
             else
               Container(
-                height: 140,
+                height: 155, // same as the photo header so every card lines up
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
@@ -99,11 +99,12 @@ class CaseCard extends StatelessWidget {
               ),
 
             // Content Body
-            Padding(
+            Expanded(
+              child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
+                mainAxisSize: MainAxisSize.max,
                 children: [
                   // Reference & Status Row
                   Row(
@@ -200,6 +201,7 @@ class CaseCard extends StatelessWidget {
                     ],
                   ),
 
+                  const Spacer(), // pushes the buttons to the bottom edge
                   const SizedBox(height: 10),
 
                   // Action Buttons Row
@@ -241,6 +243,7 @@ class CaseCard extends StatelessWidget {
                   ),
                 ],
               ),
+            ),
             ),
           ],
         ),

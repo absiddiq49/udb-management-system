@@ -1,12 +1,18 @@
-const { store } = require('../db/store');
+const store = require('../db/store');
+const { toPublicRecord } = require('../utils/redact');
+
+const toInt = (v) => {
+  const n = parseInt(v, 10);
+  return Number.isFinite(n) ? n : null;
+};
 
 // Algorithmic 5-vector similarity engine modeled on Interpol DVI & US NamUs
 exports.executeCrossMatch = (req, res) => {
   const { gender, age, heightCm, district, keywords, clothesKeywords } = req.body;
 
   const targetGender = (gender || '').toLowerCase().trim();
-  const targetAge = age ? parseInt(age, 10) : null;
-  const targetHeight = heightCm ? parseInt(heightCm, 10) : null;
+  const targetAge = toInt(age);
+  const targetHeight = toInt(heightCm);
   const targetDistrict = (district || '').toLowerCase().trim();
   const kwList = (keywords || '')
     .toLowerCase()
@@ -17,7 +23,7 @@ exports.executeCrossMatch = (req, res) => {
     .split(/[\s,]+/)
     .filter((k) => k.length > 2);
 
-  const scoredResults = store.records.map((record) => {
+  const scoredResults = store.cases.map((record) => {
     let score = 0;
     const breakdown = {};
 
@@ -100,7 +106,7 @@ exports.executeCrossMatch = (req, res) => {
     breakdown.marks = marksScore;
 
     return {
-      record,
+      record: toPublicRecord(record), // public endpoint: never return unredacted data
       score: Math.min(100, Math.round(score)),
       breakdown,
     };
@@ -114,7 +120,7 @@ exports.executeCrossMatch = (req, res) => {
 
   res.json({
     success: true,
-    totalEvaluated: store.records.length,
+    totalEvaluated: store.cases.length,
     matches: topMatches,
   });
 };

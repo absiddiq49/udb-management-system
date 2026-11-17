@@ -272,13 +272,15 @@ class _OfficialDossierViewState extends State<OfficialDossierView> {
                         final double width = constraints.maxWidth;
                         final int count = width > 900 ? 3 : width > 600 ? 2 : 1;
 
-                        return GridView.count(
-                          crossAxisCount: count,
+                        return GridView(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
-                          mainAxisSpacing: 12,
-                          crossAxisSpacing: 12,
-                          childAspectRatio: width > 900 ? 1.6 : 1.8,
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: count,
+                            mainAxisSpacing: 12,
+                            crossAxisSpacing: 12,
+                            mainAxisExtent: 165,
+                          ),
                           children: [
                             _buildDocCard(
                               title: 'Police Inquest Report (সুরতহাল)',
@@ -518,7 +520,7 @@ class _OfficialDossierViewState extends State<OfficialDossierView> {
             ],
           ),
           const SizedBox(height: 4),
-          Text(subtitle, style: TextStyle(color: isLight ? AppColors.slate400 : AppColors.darkTextMuted, fontSize: 11)),
+          Text(subtitle, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: isLight ? AppColors.slate400 : AppColors.darkTextMuted, fontSize: 11)),
           const SizedBox(height: 4),
           Text('Ref: ${doc.referenceNumber} (${doc.sizeHuman})', style: TextStyle(color: textSec, fontSize: 11)),
           const SizedBox(height: 8),

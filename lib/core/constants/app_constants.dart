@@ -3,6 +3,10 @@ class AppConstants {
   static const String appAbbr = 'CID UDB-MS';
   static const String agencyName = 'Criminal Investigation Department (CID)';
   static const String ministry = 'Bangladesh Police • Ministry of Home Affairs';
+
+  /// Reviewer/demo mode. Set to false for any real deployment: it hides the
+  /// pre-filled demo credentials and the demo access-pass hints.
+  static const bool demoMode = true;
   
   static const String emergencyPolice = '999';
   static const String cidHelpline = '+880 2 48312000';

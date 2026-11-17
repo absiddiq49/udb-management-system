@@ -265,13 +265,16 @@ class _PublicHomeViewState extends State<PublicHomeView> {
                 ? 3
                 : 2;
 
-        return GridView.count(
-          crossAxisCount: crossAxisCount,
+        // Fixed row height: KPI cards stay the same size on every screen width.
+        return GridView(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: width > 1100 ? 2.1 : (width > 700 ? 2.2 : 1.9),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            mainAxisExtent: 88,
+          ),
           children: [
             KpiCard(
               title: 'CIB Database Index',
@@ -503,25 +506,16 @@ class _PublicHomeViewState extends State<PublicHomeView> {
   Widget _buildRecordGrid(bool isDesktop, List<UdbRecord> records, bool blurSensitive) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final double width = constraints.maxWidth;
-        final int crossAxisCount = width > 1150
-            ? 3
-            : width > 750
-                ? 2
-                : 1;
-
+        // Columns are chosen automatically (cards are at most 440px wide) and
+        // every card has the same fixed height, whatever the window width.
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: crossAxisCount,
+          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: 440,
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
-            childAspectRatio: width > 1200
-                ? 0.53
-                : width > 750
-                    ? 0.49
-                    : 0.70,
+            mainAxisExtent: 450,
           ),
           itemCount: records.length,
           itemBuilder: (context, index) {

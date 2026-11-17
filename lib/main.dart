@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/app_theme.dart';
@@ -64,6 +66,46 @@ class _AppShellState extends State<AppShell> {
   UdbRecord? _selectedPublicRecord;
   UdbRecord? _selectedOfficialRecord;
   String? _prefillToken;
+
+  static const Duration _idleLimit = Duration(minutes: 15);
+  Timer? _idleTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _resetIdleTimer();
+  }
+
+  @override
+  void dispose() {
+    _idleTimer?.cancel();
+    super.dispose();
+  }
+
+  void _resetIdleTimer() {
+    _idleTimer?.cancel();
+    _idleTimer = Timer(_idleLimit, _onIdleTimeout);
+  }
+
+  // Signs official users out after 15 minutes without any pointer activity.
+  void _onIdleTimeout() {
+    if (!mounted) return;
+    final auth = context.read<AuthProvider>();
+    if (auth.isAuthenticated) {
+      auth.logout();
+      setState(() {
+        _activeNavIndex = 0;
+        _selectedPublicRecord = null;
+        _selectedOfficialRecord = null;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Session expired after 15 minutes of inactivity. Please sign in again.'),
+        ),
+      );
+    }
+    _resetIdleTimer();
+  }
 
   void _navigateTo(int index) {
     setState(() {
@@ -151,7 +193,12 @@ class _AppShellState extends State<AppShell> {
       }
     }
 
-    return Scaffold(
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (_) => _resetIdleTimer(),
+      onPointerMove: (_) => _resetIdleTimer(),
+      onPointerHover: (_) => _resetIdleTimer(),
+      child: Scaffold(
       body: Column(
         children: [
           // Top Navigation Bar
@@ -165,6 +212,7 @@ class _AppShellState extends State<AppShell> {
             child: currentBody,
           ),
         ],
+      ),
       ),
     );
   }
