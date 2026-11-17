@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/utils/responsive.dart';
+import '../../core/utils/file_import_service.dart';
 import '../../models/citizen_report.dart';
 import '../../providers/request_provider.dart';
 
@@ -34,6 +35,25 @@ class _CitizenReportViewState extends State<CitizenReportView> with SingleTicker
   CitizenReport? _searchedReport;
   bool _searchExecuted = false;
   bool _hasPhotoAttached = false;
+  final List<PickedImageFile> _attachedPhotos = [];
+
+  Future<void> _handlePickPhoto() async {
+    final picked = await pickImageFromDevice();
+    if (picked != null) {
+      setState(() {
+        _attachedPhotos.add(picked);
+        _hasPhotoAttached = true;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Attached photo: ${picked.name} (${picked.humanSize})'),
+            backgroundColor: AppColors.green,
+          ),
+        );
+      }
+    }
+  }
 
   String? _generatedReportCode;
   bool _submitted = false;
@@ -470,45 +490,85 @@ class _CitizenReportViewState extends State<CitizenReportView> with SingleTicker
             icon: Icons.camera_alt_outlined,
             children: [
               Text(
-                'Attach photos of the scene, surrounding landmarks, or clothing. Do not post graphic photos to social media.',
+                'Attach photos of the scene, surrounding landmarks, or clothing directly from your computer or phone gallery. Do not post graphic photos to social media.',
                 style: TextStyle(color: textSec, fontSize: 12),
               ),
-              const SizedBox(height: 12),
-              if (_hasPhotoAttached)
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.greenLight,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppColors.greenBorder),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.check_circle, color: AppColors.green, size: 20),
-                      const SizedBox(width: 10),
-                      const Expanded(
-                        child: Text(
-                          '1 Crime scene location photo attached (Forensic_Discovery_Photo_1.jpg)',
-                          style: TextStyle(color: AppColors.greenDark, fontWeight: FontWeight.bold, fontSize: 12),
-                        ),
+              const SizedBox(height: 14),
+              if (_attachedPhotos.isNotEmpty) ...[
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: _attachedPhotos.map((photo) {
+                    return Container(
+                      width: 220,
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: isLight ? AppColors.slate100 : AppColors.darkSurface,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: borderColor),
                       ),
-                      TextButton(
-                        onPressed: () => setState(() => _hasPhotoAttached = false),
-                        child: const Text('Remove', style: TextStyle(color: AppColors.red, fontSize: 11)),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              photo.dataUrl,
+                              height: 120,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, _, _) => Container(
+                                height: 120,
+                                color: Colors.grey.shade300,
+                                child: const Center(child: Icon(Icons.broken_image)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            photo.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: textPri, fontWeight: FontWeight.bold, fontSize: 11),
+                          ),
+                          Text(
+                            photo.humanSize,
+                            style: TextStyle(color: textSec, fontSize: 10),
+                          ),
+                          const SizedBox(height: 4),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: InkWell(
+                              onTap: () {
+                                setState(() {
+                                  _attachedPhotos.remove(photo);
+                                  _hasPhotoAttached = _attachedPhotos.isNotEmpty;
+                                });
+                              },
+                              child: const Text('Remove', style: TextStyle(color: AppColors.red, fontSize: 11, fontWeight: FontWeight.bold)),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                )
-              else
-                OutlinedButton.icon(
-                  onPressed: () => setState(() => _hasPhotoAttached = true),
-                  icon: const Icon(Icons.add_a_photo_outlined, size: 16),
-                  label: const Text('Attach Location / Deceased Photo'),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppColors.primaryBorder),
-                    foregroundColor: AppColors.primary,
-                  ),
+                    );
+                  }).toList(),
                 ),
+                const SizedBox(height: 12),
+              ],
+              OutlinedButton.icon(
+                onPressed: _handlePickPhoto,
+                icon: const Icon(Icons.file_upload_outlined, size: 16),
+                label: Text(
+                  _attachedPhotos.isEmpty ? 'Import Photo from Device / Gallery' : 'Import Another Photo',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppColors.primary),
+                  foregroundColor: AppColors.primary,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
             ],
           ),
 

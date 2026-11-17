@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/citizen_tip.dart';
 import '../../providers/request_provider.dart';
+import '../../core/utils/file_import_service.dart';
 
 class CitizenTipDialog extends StatefulWidget {
   final String bodyReference;
@@ -24,6 +25,14 @@ class _CitizenTipDialogState extends State<CitizenTipDialog> {
   final _thanaController = TextEditingController();
   final _reasonsController = TextEditingController();
   bool _submitted = false;
+  PickedImageFile? _attachedPhoto;
+
+  Future<void> _handlePickPhoto() async {
+    final picked = await pickImageFromDevice();
+    if (picked != null) {
+      setState(() => _attachedPhoto = picked);
+    }
+  }
 
   @override
   void dispose() {
@@ -211,6 +220,85 @@ class _CitizenTipDialogState extends State<CitizenTipDialog> {
                 hintText: 'Describe matching marks, scars, tattoos, dental work, clothing, height, or circumstances...',
               ),
               validator: (v) => v?.trim().isEmpty == true ? 'Please provide matching reasons' : null,
+            ),
+            const SizedBox(height: 14),
+            // Attached Photo for Verification
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Theme.of(context).brightness == Brightness.light ? AppColors.slate100 : AppColors.darkSurface,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.slate200),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Supporting Photo (Optional)',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Attach a photo of the missing person, previous medical scars, or clothing for verification.',
+                    style: TextStyle(fontSize: 11, color: AppColors.slate500),
+                  ),
+                  const SizedBox(height: 10),
+                  if (_attachedPhoto != null)
+                    Row(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
+                          child: Image.network(
+                            _attachedPhoto!.dataUrl,
+                            height: 60,
+                            width: 60,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, _, _) => Container(
+                              height: 60,
+                              width: 60,
+                              color: Colors.grey.shade300,
+                              child: const Icon(Icons.broken_image, size: 20),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _attachedPhoto!.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5),
+                              ),
+                              Text(
+                                _attachedPhoto!.humanSize,
+                                style: const TextStyle(color: AppColors.slate500, fontSize: 10.5),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, size: 16, color: AppColors.red),
+                          onPressed: () => setState(() => _attachedPhoto = null),
+                          tooltip: 'Remove photo',
+                        ),
+                      ],
+                    )
+                  else
+                    OutlinedButton.icon(
+                      onPressed: _handlePickPhoto,
+                      icon: const Icon(Icons.file_upload_outlined, size: 15),
+                      label: const Text('Import Photo from Device / Gallery', style: TextStyle(fontSize: 11.5)),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        side: const BorderSide(color: AppColors.primaryBorder),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                    ),
+                ],
+              ),
             ),
             const SizedBox(height: 24),
             Row(

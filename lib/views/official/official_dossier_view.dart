@@ -3,8 +3,10 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../../models/udb_record.dart';
+import '../../models/forensic_photo.dart';
 import '../../models/forensic_document.dart';
 import '../../models/user_session.dart';
+import '../../core/utils/file_import_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/udb_provider.dart';
 import '../widgets/official_dossier_print_dialog.dart';
@@ -83,6 +85,33 @@ class _OfficialDossierViewState extends State<OfficialDossierView> {
         duration: const Duration(seconds: 4),
       ),
     );
+  }
+
+  Future<void> _importEvidencePhoto(UdbRecord currentRecord) async {
+    final picked = await pickImageFromDevice();
+    if (picked != null) {
+      final newPhoto = ForensicPhoto(
+        id: 'photo_${DateTime.now().millisecondsSinceEpoch}',
+        category: 'scene',
+        caption: picked.name,
+        previewUrl: picked.dataUrl,
+        isSensitive: false,
+      );
+      final updatedList = List<ForensicPhoto>.from(currentRecord.photos)..add(newPhoto);
+      final updatedRecord = currentRecord.copyWith(photos: updatedList);
+      context.read<UdbProvider>().updateRecord(updatedRecord);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Imported "${picked.name}" into case photo evidence.'),
+            backgroundColor: AppColors.green,
+          ),
+        );
+        setState(() {
+          _activePhotoIndex = updatedList.length - 1;
+        });
+      }
+    }
   }
 
   @override
@@ -415,6 +444,17 @@ class _OfficialDossierViewState extends State<OfficialDossierView> {
                         ),
                         Row(
                           children: [
+                            ElevatedButton.icon(
+                              onPressed: () => _importEvidencePhoto(record),
+                              icon: const Icon(Icons.file_upload_outlined, size: 15),
+                              label: const Text('Import Photo', style: TextStyle(fontSize: 12)),
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
                             if (photos.isNotEmpty) ...[
                               OutlinedButton.icon(
                                 onPressed: () {

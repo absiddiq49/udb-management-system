@@ -22,8 +22,10 @@ class AppNavbar extends StatelessWidget {
     final themeProv = context.watch<ThemeProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final width = MediaQuery.sizeOf(context).width;
-    final isDesktop = width >= 1260;
-    final isTablet = width >= 820 && width < 1260;
+
+    // Responsive breakpoints adjusted to prevent any horizontal overflow
+    final isDesktop = width >= 1320;
+    final isTablet = width >= 860 && width < 1320;
 
     final navBg = isDark ? AppColors.darkCardBg : Colors.white;
     final borderColor = isDark ? AppColors.darkBorder : AppColors.lightBorder;
@@ -45,8 +47,8 @@ class AppNavbar extends StatelessWidget {
               ],
       ),
       padding: EdgeInsets.symmetric(
-        horizontal: isDesktop ? 32 : (isTablet ? 20 : 12),
-        vertical: 11,
+        horizontal: isDesktop ? 20 : (isTablet ? 14 : 10),
+        vertical: 9,
       ),
       child: Row(
         children: [
@@ -59,18 +61,18 @@ class AppNavbar extends StatelessWidget {
               children: [
                 Image.asset(
                   'assets/images/cid-logo-blue-ui.png',
-                  height: 38,
+                  height: 36,
                   errorBuilder: (_, _, _) => Image.asset(
                     'assets/images/CID.png',
-                    height: 38,
+                    height: 36,
                     errorBuilder: (_, _, _) => const Icon(
                       Icons.shield_outlined,
                       color: AppColors.primary,
-                      size: 32,
+                      size: 30,
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
@@ -83,13 +85,13 @@ class AppNavbar extends StatelessWidget {
                           style: TextStyle(
                             color: titleColor,
                             fontWeight: FontWeight.w800,
-                            fontSize: 14,
-                            letterSpacing: 0.5,
+                            fontSize: 13.5,
+                            letterSpacing: 0.4,
                           ),
                         ),
-                        const SizedBox(width: 6),
+                        const SizedBox(width: 5),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
                           decoration: BoxDecoration(
                             color: AppColors.primaryLight,
                             borderRadius: BorderRadius.circular(4),
@@ -99,20 +101,20 @@ class AppNavbar extends StatelessWidget {
                             'UDB-MS',
                             style: TextStyle(
                               color: AppColors.primary,
-                              fontSize: 9,
+                              fontSize: 8.5,
                               fontWeight: FontWeight.w800,
                             ),
                           ),
                         ),
                       ],
                     ),
-                    if (width > 950) ...[
+                    if (width > 1150) ...[
                       const SizedBox(height: 2),
                       Text(
                         'Unidentified Deceased & Forensic Cross-Matching',
                         style: TextStyle(
                           color: subtitleColor,
-                          fontSize: 10.5,
+                          fontSize: 10,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -133,7 +135,7 @@ class AppNavbar extends StatelessWidget {
             _navLink('Cross-Matching Engine', 3, Icons.compare_arrows_outlined, isDark),
             if (auth.isAuthenticated)
               _navLink('Official Portal', 4, Icons.admin_panel_settings_outlined, isDark),
-            const SizedBox(width: 8),
+            const SizedBox(width: 6),
           ] else if (isTablet) ...[
             // Tablet Compact Navigation (Icon with Tooltip)
             _compactNavLink('Deceased Index', 0, Icons.person_search_outlined, isDark),
@@ -142,7 +144,7 @@ class AppNavbar extends StatelessWidget {
             _compactNavLink('Cross-Matching Engine', 3, Icons.compare_arrows_outlined, isDark),
             if (auth.isAuthenticated)
               _compactNavLink('Official Portal', 4, Icons.admin_panel_settings_outlined, isDark),
-            const SizedBox(width: 6),
+            const SizedBox(width: 4),
           ] else ...[
             // Mobile Menu Popup
             PopupMenuButton<int>(
@@ -170,13 +172,15 @@ class AppNavbar extends StatelessWidget {
             icon: Icon(
               themeProv.isLight ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
               color: isDark ? AppColors.goldBright : AppColors.slate600,
-              size: 20,
+              size: 19,
             ),
             tooltip: themeProv.isLight ? 'Switch to Dark Mode' : 'Switch to Light Mode',
+            padding: const EdgeInsets.all(6),
+            constraints: const BoxConstraints(),
             onPressed: () => themeProv.toggleTheme(),
           ),
 
-          const SizedBox(width: 4),
+          const SizedBox(width: 6),
 
           // Global Sensitive Blur Toggle
           Tooltip(
@@ -185,7 +189,7 @@ class AppNavbar extends StatelessWidget {
               onPressed: () => udb.toggleBlur(),
               icon: Icon(
                 udb.blurSensitive ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                size: 15,
+                size: 14,
                 color: udb.blurSensitive ? AppColors.amber : AppColors.primary,
               ),
               label: Text(
@@ -193,7 +197,7 @@ class AppNavbar extends StatelessWidget {
                     ? (udb.blurSensitive ? 'Blur: ON' : 'Blur: OFF')
                     : (udb.blurSensitive ? 'ON' : 'OFF'),
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 10.5,
                   fontWeight: FontWeight.w600,
                   color: udb.blurSensitive ? AppColors.amber : AppColors.primary,
                 ),
@@ -203,73 +207,85 @@ class AppNavbar extends StatelessWidget {
                   color: udb.blurSensitive ? AppColors.amber.withValues(alpha: 0.5) : AppColors.primaryBorder,
                 ),
                 backgroundColor: udb.blurSensitive ? AppColors.goldLight : AppColors.primaryLight,
-                padding: EdgeInsets.symmetric(horizontal: isDesktop ? 10 : 8, vertical: 7),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
               ),
             ),
           ),
 
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
 
           // Auth Button / User Profile
           if (!auth.isAuthenticated)
             ElevatedButton.icon(
               onPressed: () => onNavigate(4),
-              icon: const Icon(Icons.lock_outline, size: 14),
-              label: Text(isDesktop ? 'Officer Portal' : 'Login', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+              icon: const Icon(Icons.lock_outline, size: 13),
+              label: Text(
+                isDesktop ? 'Officer Portal' : 'Login',
+                style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600),
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
                 elevation: 0,
-                padding: EdgeInsets.symmetric(horizontal: isDesktop ? 14 : 10, vertical: 8),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                padding: EdgeInsets.symmetric(horizontal: isDesktop ? 12 : 8, vertical: 7),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
               ),
             )
           else ...[
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: isDark ? AppColors.slate800 : AppColors.slate100,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(6),
                 border: Border.all(color: borderColor),
               ),
               child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   CircleAvatar(
-                    radius: 11,
+                    radius: 10,
                     backgroundColor: AppColors.primary.withValues(alpha: 0.15),
-                    child: const Icon(Icons.shield, color: AppColors.primary, size: 12),
+                    child: const Icon(Icons.shield, color: AppColors.primary, size: 11),
                   ),
-                  if (isDesktop) ...[
-                    const SizedBox(width: 8),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          auth.session.fullName,
-                          style: TextStyle(
-                            color: titleColor,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
+                  if (width > 1050) ...[
+                    const SizedBox(width: 6),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 120),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            auth.session.fullName,
+                            style: TextStyle(
+                              color: titleColor,
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                        Text(
-                          '${auth.session.rank} (${auth.session.bpNumber})',
-                          style: TextStyle(
-                            color: subtitleColor,
-                            fontSize: 9,
+                          Text(
+                            '${auth.session.rank} (${auth.session.bpNumber})',
+                            style: TextStyle(
+                              color: subtitleColor,
+                              fontSize: 8.5,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ],
                 ],
               ),
             ),
-            const SizedBox(width: 4),
             IconButton(
-              icon: const Icon(Icons.logout, size: 18, color: AppColors.red),
+              icon: const Icon(Icons.logout, size: 17, color: AppColors.red),
+              padding: const EdgeInsets.all(6),
+              constraints: const BoxConstraints(),
               onPressed: () {
                 auth.logout();
                 onNavigate(0);
@@ -292,22 +308,22 @@ class AppNavbar extends StatelessWidget {
         : Colors.transparent;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 1.5),
       child: TextButton.icon(
         onPressed: () => onNavigate(index),
-        icon: Icon(icon, size: 15, color: fg),
+        icon: Icon(icon, size: 14, color: fg),
         label: Text(
           label,
           style: TextStyle(
-            fontSize: 13,
+            fontSize: 12,
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
             color: fg,
           ),
         ),
         style: TextButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           backgroundColor: bg,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         ),
       ),
     );
@@ -321,14 +337,16 @@ class AppNavbar extends StatelessWidget {
         onPressed: () => onNavigate(index),
         icon: Icon(
           icon,
-          size: 19,
+          size: 18,
           color: isSelected ? AppColors.primary : (isDark ? AppColors.darkTextSecondary : AppColors.slate600),
         ),
+        padding: const EdgeInsets.all(6),
+        constraints: const BoxConstraints(),
         style: IconButton.styleFrom(
           backgroundColor: isSelected
               ? (isDark ? AppColors.primary.withValues(alpha: 0.15) : AppColors.primaryLight)
               : Colors.transparent,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         ),
       ),
     );
@@ -339,13 +357,13 @@ class AppNavbar extends StatelessWidget {
       value: value,
       child: Row(
         children: [
-          Icon(icon, size: 18, color: AppColors.primary),
-          const SizedBox(width: 10),
+          Icon(icon, size: 17, color: AppColors.primary),
+          const SizedBox(width: 8),
           Text(
             label,
             style: TextStyle(
               color: isDark ? AppColors.darkTextPrimary : AppColors.slate800,
-              fontSize: 13,
+              fontSize: 12.5,
               fontWeight: FontWeight.w500,
             ),
           ),

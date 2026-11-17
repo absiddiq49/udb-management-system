@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/utils/responsive.dart';
+import '../../core/utils/file_import_service.dart';
 import '../../models/udb_record.dart';
 import '../../models/forensic_photo.dart';
 import '../../models/forensic_document.dart';
@@ -199,6 +200,103 @@ class _CaseRegistrationViewState extends State<CaseRegistrationView> {
     }
   }
 
+  Future<void> _importPhotoDirect() async {
+    final picked = await pickImageFromDevice();
+    if (picked != null) {
+      _promptPhotoDetails(picked);
+    }
+  }
+
+  void _promptPhotoDetails(PickedImageFile picked) {
+    final captionCtrl = TextEditingController(text: picked.name);
+    String category = 'scene';
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDlgState) => AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.check_circle_outline, color: AppColors.green, size: 20),
+              SizedBox(width: 8),
+              Text('Categorize Imported Photo'),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    picked.dataUrl,
+                    height: 140,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) => Container(
+                      height: 140,
+                      color: Colors.grey.shade200,
+                      child: const Center(child: Icon(Icons.photo)),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text('File: ${picked.name} (${picked.humanSize})', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 14),
+                DropdownButtonFormField<String>(
+                  value: category,
+                  decoration: const InputDecoration(labelText: 'Photo Category *'),
+                  items: const [
+                    DropdownMenuItem(value: 'face', child: Text('Facial Portrait (Sensitive)')),
+                    DropdownMenuItem(value: 'scene', child: Text('Recovery Crime Scene')),
+                    DropdownMenuItem(value: 'marks', child: Text('Marks / Tattoos / Scars')),
+                    DropdownMenuItem(value: 'belongings', child: Text('Belongings & Clothing')),
+                    DropdownMenuItem(value: 'dental', child: Text('Dental / X-Ray')),
+                  ],
+                  onChanged: (v) => setDlgState(() => category = v!),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: captionCtrl,
+                  decoration: const InputDecoration(labelText: 'Photo Caption / Anatomical Description *'),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton.icon(
+              onPressed: () {
+                setState(() {
+                  _photos.add(ForensicPhoto(
+                    id: 'p_${DateTime.now().millisecondsSinceEpoch}',
+                    category: category,
+                    caption: captionCtrl.text.trim().isNotEmpty ? captionCtrl.text.trim() : picked.name,
+                    previewUrl: picked.dataUrl,
+                    isSensitive: category == 'face' || category == 'scene',
+                  ));
+                });
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Added "${picked.name}" to case photos.'),
+                    backgroundColor: AppColors.green,
+                  ),
+                );
+              },
+              icon: const Icon(Icons.add_photo_alternate, size: 16),
+              label: const Text('Add to Dossier'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _addPhotoDialog() {
     final captionCtrl = TextEditingController();
     final urlCtrl = TextEditingController(text: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=600&q=80');
@@ -209,32 +307,59 @@ class _CaseRegistrationViewState extends State<CaseRegistrationView> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDlgState) => AlertDialog(
           title: const Text('Add Forensic Photo to Dossier'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              DropdownButtonFormField<String>(
-                value: category,
-                decoration: const InputDecoration(labelText: 'Photo Category'),
-                items: const [
-                  DropdownMenuItem(value: 'face', child: Text('Facial Portrait (Sensitive)')),
-                  DropdownMenuItem(value: 'scene', child: Text('Recovery Crime Scene')),
-                  DropdownMenuItem(value: 'marks', child: Text('Marks / Tattoos / Scars')),
-                  DropdownMenuItem(value: 'belongings', child: Text('Belongings & Clothing')),
-                  DropdownMenuItem(value: 'dental', child: Text('Dental / X-Ray')),
-                ],
-                onChanged: (v) => setDlgState(() => category = v!),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: captionCtrl,
-                decoration: const InputDecoration(labelText: 'Photo Caption / Anatomical Description'),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: urlCtrl,
-                decoration: const InputDecoration(labelText: 'Image Resource URL'),
-              ),
-            ],
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    Navigator.pop(ctx);
+                    await _importPhotoDirect();
+                  },
+                  icon: const Icon(Icons.file_upload_outlined, size: 18),
+                  label: const Text('Pick Image from Desktop / Gallery'),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.primary),
+                    foregroundColor: AppColors.primary,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Row(
+                  children: [
+                    Expanded(child: Divider()),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8),
+                      child: Text('OR USE IMAGE URL', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                    ),
+                    Expanded(child: Divider()),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: category,
+                  decoration: const InputDecoration(labelText: 'Photo Category'),
+                  items: const [
+                    DropdownMenuItem(value: 'face', child: Text('Facial Portrait (Sensitive)')),
+                    DropdownMenuItem(value: 'scene', child: Text('Recovery Crime Scene')),
+                    DropdownMenuItem(value: 'marks', child: Text('Marks / Tattoos / Scars')),
+                    DropdownMenuItem(value: 'belongings', child: Text('Belongings & Clothing')),
+                    DropdownMenuItem(value: 'dental', child: Text('Dental / X-Ray')),
+                  ],
+                  onChanged: (v) => setDlgState(() => category = v!),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: captionCtrl,
+                  decoration: const InputDecoration(labelText: 'Photo Caption / Anatomical Description'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: urlCtrl,
+                  decoration: const InputDecoration(labelText: 'Image Resource URL'),
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
@@ -841,10 +966,26 @@ class _CaseRegistrationViewState extends State<CaseRegistrationView> {
                   'Attached Forensic Photos (${_photos.length}):',
                   style: TextStyle(color: textPri, fontWeight: FontWeight.bold, fontSize: 13),
                 ),
-                TextButton.icon(
-                  onPressed: _addPhotoDialog,
-                  icon: const Icon(Icons.add_photo_alternate_rounded, size: 16),
-                  label: const Text('Attach Another Photo'),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: _importPhotoDirect,
+                      icon: const Icon(Icons.file_upload_outlined, size: 15),
+                      label: const Text('Import from Desktop / Gallery', style: TextStyle(fontSize: 12)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    TextButton.icon(
+                      onPressed: _addPhotoDialog,
+                      icon: const Icon(Icons.link, size: 15),
+                      label: const Text('Add via URL', style: TextStyle(fontSize: 12)),
+                    ),
+                  ],
                 ),
               ],
             ),
