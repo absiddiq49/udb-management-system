@@ -4,8 +4,11 @@ import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../../models/udb_record.dart';
 import '../../models/forensic_document.dart';
+import '../../models/user_session.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/udb_provider.dart';
+import '../widgets/official_dossier_print_dialog.dart';
+import '../widgets/photo_lightbox_dialog.dart';
 
 class OfficialDossierView extends StatefulWidget {
   final UdbRecord record;
@@ -24,6 +27,14 @@ class OfficialDossierView extends StatefulWidget {
 class _OfficialDossierViewState extends State<OfficialDossierView> {
   int _activePhotoIndex = 0;
   bool _blurPhotos = false;
+  final _noteController = TextEditingController();
+  String _noteCategory = 'Forensic Lab';
+
+  @override
+  void dispose() {
+    _noteController.dispose();
+    super.dispose();
+  }
 
   void _updateStatus(String newStatus) {
     final updated = widget.record.copyWith(status: newStatus);
@@ -32,6 +43,30 @@ class _OfficialDossierViewState extends State<OfficialDossierView> {
       SnackBar(
         content: Text('Case status updated to "$newStatus"'),
         backgroundColor: AppColors.primary,
+      ),
+    );
+    setState(() {});
+  }
+
+  void _addInvestigationNote(UserSession session) {
+    final text = _noteController.text.trim();
+    if (text.isEmpty) return;
+
+    final note = CaseNoteEntry(
+      id: 'note_${DateTime.now().millisecondsSinceEpoch}',
+      authorName: '${session.rank} ${session.fullName}',
+      authorBp: session.bpNumber,
+      category: _noteCategory,
+      content: text,
+      timestamp: '${DateTime.now().toString().split(' ')[0]} ${TimeOfDay.now().format(context)}',
+    );
+
+    context.read<UdbProvider>().addCaseNote(widget.record.referenceNo, note);
+    _noteController.clear();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Investigation entry added to case audit trail.'),
+        backgroundColor: AppColors.green,
       ),
     );
     setState(() {});
@@ -53,8 +88,9 @@ class _OfficialDossierViewState extends State<OfficialDossierView> {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
+    final udb = context.watch<UdbProvider>();
     final isDesktop = Responsive.isDesktop(context);
-    final record = widget.record;
+    final record = udb.repository.findByReference(widget.record.referenceNo) ?? widget.record;
 
     final isLight = Theme.of(context).brightness == Brightness.light;
     final cardBg = isLight ? Colors.white : AppColors.darkCardBg;
@@ -111,10 +147,11 @@ class _OfficialDossierViewState extends State<OfficialDossierView> {
                       const SizedBox(width: 10),
                       OutlinedButton.icon(
                         onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Preparing official police print layout with watermark...'),
-                              backgroundColor: AppColors.primary,
+                          showDialog(
+                            context: context,
+                            builder: (_) => OfficialDossierPrintDialog(
+                              record: record,
+                              session: auth.session,
                             ),
                           );
                         },
@@ -376,10 +413,36 @@ class _OfficialDossierViewState extends State<OfficialDossierView> {
                           'Photographic Catalog (High-Resolution Archive)',
                           style: TextStyle(color: textPri, fontWeight: FontWeight.bold, fontSize: 16),
                         ),
-                        IconButton(
-                          icon: Icon(_blurPhotos ? Icons.visibility_off : Icons.visibility, color: AppColors.primary, size: 20),
-                          tooltip: 'Toggle Officer Blur Filter',
-                          onPressed: () => setState(() => _blurPhotos = !_blurPhotos),
+                        Row(
+                          children: [
+                            if (photos.isNotEmpty) ...[
+                              OutlinedButton.icon(
+                                onPressed: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (_) => PhotoLightboxDialog(
+                                      photos: photos,
+                                      initialIndex: _activePhotoIndex,
+                                      initialBlur: _blurPhotos,
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(Icons.fullscreen_rounded, size: 16),
+                                label: const Text('Full-Screen Lightbox'),
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  foregroundColor: AppColors.primary,
+                                  side: const BorderSide(color: AppColors.primaryBorder),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                            ],
+                            IconButton(
+                              icon: Icon(_blurPhotos ? Icons.visibility_off : Icons.visibility, color: AppColors.primary, size: 20),
+                              tooltip: 'Toggle Officer Blur Filter',
+                              onPressed: () => setState(() => _blurPhotos = !_blurPhotos),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -473,6 +536,11 @@ class _OfficialDossierViewState extends State<OfficialDossierView> {
 
               // Section 6: Officer Narrative & Confidential Intelligence Remarks
               _buildSection6(record, cardBg, borderColor, textPri, textSec),
+
+              const SizedBox(height: 20),
+
+              // Section 7: Officer Case Audit Trail & Investigative Lead Entries
+              _buildSection7Notes(record, isLight, cardBg, borderColor, textPri, textSec, auth.session),
             ],
           ),
         ),
@@ -594,10 +662,207 @@ class _OfficialDossierViewState extends State<OfficialDossierView> {
   }
 
   Widget _buildSection6(UdbRecord record, Color cardBg, Color borderColor, Color textPri, Color textSec) {
-    return _panel('Section 6 & 7: Case Narrative & Confidential Intelligence Remarks', Icons.security_rounded, cardBg, borderColor, textPri, textSec, [
+    return _panel('Section 6: Case Narrative & Investigative Circumstances', Icons.security_rounded, cardBg, borderColor, textPri, textSec, [
       _row('Case Circumstances & Narrative', record.description, textPri, textSec),
       _row('Confidential Officer Remarks', record.remarks.isNotEmpty ? record.remarks : 'No internal intelligence remarks logged.', textPri, textSec),
     ]);
+  }
+
+  Widget _buildSection7Notes(
+    UdbRecord record,
+    bool isLight,
+    Color cardBg,
+    Color borderColor,
+    Color textPri,
+    Color textSec,
+    UserSession session,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryLight,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.note_alt_outlined, color: AppColors.primary, size: 18),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Section 7: Official Case Audit Trail & Investigative Entries (${record.caseNotes.length})',
+                    style: TextStyle(color: textPri, fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text('Confidential Police Ledger', style: TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Divider(),
+          const SizedBox(height: 12),
+
+          // New Note Intake Box
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: isLight ? AppColors.slate50 : AppColors.darkSurface,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: isLight ? AppColors.slate200 : AppColors.darkBorder),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.edit_note_rounded, size: 16, color: AppColors.primary),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Log Official Case Entry / Forensic Marker Update',
+                      style: TextStyle(color: textPri, fontWeight: FontWeight.bold, fontSize: 12.5),
+                    ),
+                    const Spacer(),
+                    DropdownButton<String>(
+                      value: _noteCategory,
+                      underline: const SizedBox(),
+                      icon: const Icon(Icons.arrow_drop_down, size: 18),
+                      style: TextStyle(color: textPri, fontSize: 11.5, fontWeight: FontWeight.w600),
+                      items: const [
+                        DropdownMenuItem(value: 'Forensic Lab', child: Text('Forensic Lab')),
+                        DropdownMenuItem(value: 'Thana Lead', child: Text('Thana Lead')),
+                        DropdownMenuItem(value: 'DNA Match', child: Text('DNA Match')),
+                        DropdownMenuItem(value: 'Relative Inquiry', child: Text('Relative Inquiry')),
+                        DropdownMenuItem(value: 'General Inquest', child: Text('General Inquest')),
+                      ],
+                      onChanged: (cat) {
+                        if (cat != null) setState(() => _noteCategory = cat);
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _noteController,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                    hintText: 'Enter official investigative note, lab marker confirmation, or field lead...',
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: ElevatedButton.icon(
+                    onPressed: () => _addInvestigationNote(session),
+                    icon: const Icon(Icons.save_rounded, size: 14),
+                    label: const Text('Add Audit Entry', style: TextStyle(fontSize: 12)),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Notes List
+          if (record.caseNotes.isNotEmpty)
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: record.caseNotes.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 10),
+              itemBuilder: (context, idx) {
+                final note = record.caseNotes[idx];
+                return Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isLight ? Colors.white : AppColors.darkCardBg,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: isLight ? AppColors.slate200 : AppColors.darkBorder),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryLight,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  note.category.toUpperCase(),
+                                  style: const TextStyle(color: AppColors.primary, fontSize: 9.5, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '${note.authorName} (${note.authorBp})',
+                                style: TextStyle(color: textPri, fontWeight: FontWeight.bold, fontSize: 12),
+                              ),
+                            ],
+                          ),
+                          Text(
+                            note.timestamp,
+                            style: TextStyle(color: textSec, fontSize: 10.5),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        note.content,
+                        style: TextStyle(color: textPri, fontSize: 12, height: 1.4),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Center(
+                child: Text(
+                  'No secondary case notes recorded yet. Use the field above to log forensic developments.',
+                  style: TextStyle(color: textSec, fontSize: 12),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 
   Widget _panel(String title, IconData icon, Color cardBg, Color borderColor, Color textPri, Color textSec, List<Widget> children) {

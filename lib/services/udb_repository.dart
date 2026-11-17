@@ -4,6 +4,34 @@ import '../models/citizen_report.dart';
 import '../models/citizen_tip.dart';
 import '../core/constants/mock_data.dart';
 
+enum UdbSortOption {
+  dateDesc,
+  dateAsc,
+  ageAsc,
+  ageDesc,
+  heightDesc,
+  referenceAsc,
+}
+
+extension UdbSortOptionExtension on UdbSortOption {
+  String get label {
+    switch (this) {
+      case UdbSortOption.dateDesc:
+        return 'Recovery Date (Newest First)';
+      case UdbSortOption.dateAsc:
+        return 'Recovery Date (Oldest First)';
+      case UdbSortOption.ageAsc:
+        return 'Estimated Age (Youngest First)';
+      case UdbSortOption.ageDesc:
+        return 'Estimated Age (Oldest First)';
+      case UdbSortOption.heightDesc:
+        return 'Height (Tallest First)';
+      case UdbSortOption.referenceAsc:
+        return 'Reference No. (A-Z)';
+    }
+  }
+}
+
 class UdbFilterParams {
   final String? keywords;
   final String? gender;
@@ -14,6 +42,8 @@ class UdbFilterParams {
   final String? status;
   final bool? hasFingerprint;
   final bool? hasDna;
+  final String? quickPreset; // 'all', 'withDna', 'withAfis', 'recent', 'floater', 'skeletal'
+  final UdbSortOption sortOption;
 
   const UdbFilterParams({
     this.keywords,
@@ -25,6 +55,8 @@ class UdbFilterParams {
     this.status,
     this.hasFingerprint,
     this.hasDna,
+    this.quickPreset,
+    this.sortOption = UdbSortOption.dateDesc,
   });
 
   bool get isEmpty =>
@@ -36,7 +68,8 @@ class UdbFilterParams {
       (thana == null || thana!.isEmpty) &&
       (status == null || status!.isEmpty) &&
       hasFingerprint != true &&
-      hasDna != true;
+      hasDna != true &&
+      (quickPreset == null || quickPreset == 'all' || quickPreset!.isEmpty);
 }
 
 class UdbRepository {
@@ -51,7 +84,7 @@ class UdbRepository {
   List<CitizenTip> getAllTips() => List.unmodifiable(_tips);
 
   List<UdbRecord> filterRecords(UdbFilterParams filters) {
-    return _records.where((record) {
+    final list = _records.where((record) {
       if (filters.gender != null && filters.gender!.isNotEmpty) {
         if (record.gender.toLowerCase() != filters.gender!.toLowerCase()) {
           return false;
@@ -96,6 +129,26 @@ class UdbRepository {
         return false;
       }
 
+      // Quick presets filter
+      if (filters.quickPreset != null && filters.quickPreset != 'all') {
+        switch (filters.quickPreset) {
+          case 'withDna':
+            if (!record.hasDna) return false;
+            break;
+          case 'withAfis':
+            if (!record.hasFingerprint) return false;
+            break;
+          case 'floater':
+            final cond = record.bodyCondition.toLowerCase();
+            if (!cond.contains('water') && !cond.contains('floater')) return false;
+            break;
+          case 'skeletal':
+            final cond = record.bodyCondition.toLowerCase();
+            if (!cond.contains('skeletal') && !cond.contains('decomposed')) return false;
+            break;
+        }
+      }
+
       if (filters.keywords != null && filters.keywords!.trim().isNotEmpty) {
         final q = filters.keywords!.trim().toLowerCase();
         final haystack = '${record.referenceNo} ${record.gdCaseReference} ${record.placeFound} '
@@ -109,6 +162,30 @@ class UdbRepository {
 
       return true;
     }).toList();
+
+    // Sort
+    switch (filters.sortOption) {
+      case UdbSortOption.dateDesc:
+        list.sort((a, b) => b.dateFound.compareTo(a.dateFound));
+        break;
+      case UdbSortOption.dateAsc:
+        list.sort((a, b) => a.dateFound.compareTo(b.dateFound));
+        break;
+      case UdbSortOption.ageAsc:
+        list.sort((a, b) => a.estimatedAge.compareTo(b.estimatedAge));
+        break;
+      case UdbSortOption.ageDesc:
+        list.sort((a, b) => b.estimatedAge.compareTo(a.estimatedAge));
+        break;
+      case UdbSortOption.heightDesc:
+        list.sort((a, b) => b.heightCm.compareTo(a.heightCm));
+        break;
+      case UdbSortOption.referenceAsc:
+        list.sort((a, b) => a.referenceNo.compareTo(b.referenceNo));
+        break;
+    }
+
+    return list;
   }
 
   UdbRecord? findByReference(String ref) {
@@ -130,9 +207,27 @@ class UdbRepository {
     }
   }
 
+  void addCaseNote(String referenceNo, CaseNoteEntry note) {
+    final idx = _records.indexWhere((r) => r.referenceNo.toLowerCase() == referenceNo.toLowerCase());
+    if (idx != -1) {
+      final updatedNotes = List<CaseNoteEntry>.from(_records[idx].caseNotes)..insert(0, note);
+      _records[idx] = _records[idx].copyWith(caseNotes: updatedNotes);
+    }
+  }
+
   // IO Access Requests
   void submitAccessRequest(OfficialAccessRequest req) {
     _requests.insert(0, req);
+  }
+
+  OfficialAccessRequest? findAccessRequestByCode(String code) {
+    try {
+      return _requests.firstWhere(
+        (r) => r.requestCode.trim().toLowerCase() == code.trim().toLowerCase(),
+      );
+    } catch (_) {
+      return null;
+    }
   }
 
   void reviewAccessRequest({
@@ -159,8 +254,32 @@ class UdbRepository {
     _citizenReports.insert(0, report);
   }
 
+  CitizenReport? findCitizenReportByReference(String ref) {
+    try {
+      return _citizenReports.firstWhere(
+        (r) => r.reportReference.trim().toLowerCase() == ref.trim().toLowerCase(),
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void updateCitizenReportStatus(String reportId, String newStatus) {
+    final idx = _citizenReports.indexWhere((r) => r.id == reportId);
+    if (idx != -1) {
+      _citizenReports[idx] = _citizenReports[idx].copyWith(status: newStatus);
+    }
+  }
+
   void submitCitizenTip(CitizenTip tip) {
     _tips.insert(0, tip);
+  }
+
+  void updateTipStatus(String tipId, String newStatus) {
+    final idx = _tips.indexWhere((t) => t.id == tipId);
+    if (idx != -1) {
+      _tips[idx] = _tips[idx].copyWith(status: newStatus);
+    }
   }
 }
 

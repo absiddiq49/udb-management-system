@@ -1,6 +1,24 @@
 import 'forensic_photo.dart';
 import 'forensic_document.dart';
 
+class CaseNoteEntry {
+  final String id;
+  final String authorName;
+  final String authorBp;
+  final String category; // 'Forensic Lab', 'Thana Lead', 'DNA Match', 'General Inquest', 'Relative Inquiry'
+  final String content;
+  final String timestamp;
+
+  const CaseNoteEntry({
+    required this.id,
+    required this.authorName,
+    required this.authorBp,
+    required this.category,
+    required this.content,
+    required this.timestamp,
+  });
+}
+
 class UdbRecord {
   final String id;
   final String referenceNo; // e.g. CIB-UDB-2026-001
@@ -57,6 +75,7 @@ class UdbRecord {
   final bool isPublicPublished;
   final List<ForensicPhoto> photos;
   final List<ForensicDocument> documents;
+  final List<CaseNoteEntry> caseNotes;
 
   const UdbRecord({
     required this.id,
@@ -100,6 +119,7 @@ class UdbRecord {
     this.isPublicPublished = true,
     this.photos = const [],
     this.documents = const [],
+    this.caseNotes = const [],
   });
 
   bool get hasDna =>
@@ -117,6 +137,7 @@ class UdbRecord {
     String? remarks,
     List<ForensicPhoto>? photos,
     List<ForensicDocument>? documents,
+    List<CaseNoteEntry>? caseNotes,
   }) {
     return UdbRecord(
       id: id,
@@ -160,6 +181,7 @@ class UdbRecord {
       isPublicPublished: isPublicPublished,
       photos: photos ?? this.photos,
       documents: documents ?? this.documents,
+      caseNotes: caseNotes ?? this.caseNotes,
     );
   }
 }

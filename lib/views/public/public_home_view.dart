@@ -9,6 +9,7 @@ import '../widgets/kpi_card.dart';
 import '../widgets/case_card.dart';
 import '../widgets/filter_drawer.dart';
 import '../widgets/app_footer.dart';
+import '../widgets/forensic_table_view.dart';
 
 class PublicHomeView extends StatefulWidget {
   final ValueChanged<UdbRecord> onSelectRecord;
@@ -29,6 +30,7 @@ class PublicHomeView extends StatefulWidget {
 class _PublicHomeViewState extends State<PublicHomeView> {
   final _searchController = TextEditingController();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  bool _isTableView = false;
 
   @override
   void dispose() {
@@ -83,42 +85,115 @@ class _PublicHomeViewState extends State<PublicHomeView> {
                 const SizedBox(height: 16),
 
                 // Results Toolbar
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: RichText(
-                        text: TextSpan(
-                          style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
-                          children: [
-                            const TextSpan(text: 'Showing '),
-                            TextSpan(
-                              text: '${records.length}',
-                              style: const TextStyle(color: AppColors.gold, fontWeight: FontWeight.bold),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).brightness == Brightness.light ? Colors.white : AppColors.darkCardBg,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: Theme.of(context).brightness == Brightness.light ? AppColors.lightBorder : AppColors.darkBorder,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: RichText(
+                          text: TextSpan(
+                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                            children: [
+                              const TextSpan(text: 'Showing '),
+                              TextSpan(
+                                text: '${records.length}',
+                                style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+                              ),
+                              TextSpan(text: ' of ${udb.totalRecords} verified deceased cases'),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      // Sort Selector
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.sort_rounded, size: 16, color: AppColors.slate500),
+                          const SizedBox(width: 6),
+                          DropdownButton<UdbSortOption>(
+                            value: udb.filters.sortOption,
+                            underline: const SizedBox(),
+                            icon: const Icon(Icons.arrow_drop_down, size: 18),
+                            style: TextStyle(
+                              color: Theme.of(context).brightness == Brightness.light ? AppColors.slate800 : Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
                             ),
-                            TextSpan(text: ' of ${udb.totalRecords} verified deceased records'),
+                            items: UdbSortOption.values.map((s) {
+                              return DropdownMenuItem(
+                                value: s,
+                                child: Text(s.label),
+                              );
+                            }).toList(),
+                            onChanged: (s) {
+                              if (s != null) udb.updateSort(s);
+                            },
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(width: 14),
+
+                      // View Mode Toggle (Grid vs Table)
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).brightness == Brightness.light ? AppColors.slate100 : AppColors.darkSurface,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: Theme.of(context).brightness == Brightness.light ? AppColors.slate200 : AppColors.darkBorder,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: Icon(
+                                Icons.grid_view_rounded,
+                                size: 16,
+                                color: !_isTableView ? AppColors.primary : AppColors.slate500,
+                              ),
+                              tooltip: 'Visual Grid Cards View',
+                              padding: const EdgeInsets.all(6),
+                              constraints: const BoxConstraints(),
+                              onPressed: () => setState(() => _isTableView = false),
+                            ),
+                            Container(width: 1, height: 16, color: AppColors.slate300),
+                            IconButton(
+                              icon: Icon(
+                                Icons.table_chart_outlined,
+                                size: 16,
+                                color: _isTableView ? AppColors.primary : AppColors.slate500,
+                              ),
+                              tooltip: 'Forensic Comparison Table View',
+                              padding: const EdgeInsets.all(6),
+                              constraints: const BoxConstraints(),
+                              onPressed: () => setState(() => _isTableView = true),
+                            ),
                           ],
                         ),
                       ),
-                    ),
-                    Row(
-                      children: [
-                        const Icon(Icons.shield_outlined, size: 14, color: AppColors.textMuted),
-                        const SizedBox(width: 4),
-                        const Text(
-                          'Interpol DVI & NamUs Compliant',
-                          style: TextStyle(color: AppColors.textMuted, fontSize: 11),
-                        ),
-                      ],
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
 
                 const SizedBox(height: 16),
 
-                // Records Grid
+                // Records Grid or Table View
                 if (records.isNotEmpty)
-                  _buildRecordGrid(isDesktop, records, udb.blurSensitive)
+                  _isTableView
+                      ? ForensicTableView(
+                          records: records,
+                          onSelectRecord: widget.onSelectRecord,
+                        )
+                      : _buildRecordGrid(isDesktop, records, udb.blurSensitive)
                 else
                   _buildEmptyState(udb),
                 const SizedBox(height: 48),
@@ -139,17 +214,20 @@ class _PublicHomeViewState extends State<PublicHomeView> {
     final subtitleColor = isLight ? AppColors.slate600 : AppColors.darkTextSecondary;
 
     return Container(
-      padding: EdgeInsets.all(isDesktop ? 32 : 20),
+      padding: EdgeInsets.symmetric(
+        horizontal: isDesktop ? 24 : 16,
+        vertical: isDesktop ? 18 : 14,
+      ),
       decoration: BoxDecoration(
         color: cardBg,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: borderColor, width: 1),
         boxShadow: isLight
             ? const [
                 BoxShadow(
                   color: Color(0x060F172A),
-                  blurRadius: 16,
-                  offset: Offset(0, 4),
+                  blurRadius: 12,
+                  offset: Offset(0, 3),
                 ),
               ]
             : null,
@@ -164,72 +242,75 @@ class _PublicHomeViewState extends State<PublicHomeView> {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         color: AppColors.goldLight,
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(5),
                         border: Border.all(color: AppColors.goldBorder),
                       ),
                       child: const Text(
                         'CENTRAL INTELLIGENCE BUREAU (CIB)',
-                        style: TextStyle(color: AppColors.goldDark, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.8),
+                        style: TextStyle(color: AppColors.goldDark, fontSize: 9.5, fontWeight: FontWeight.bold, letterSpacing: 0.6),
                       ),
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         color: AppColors.greenLight,
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(5),
                         border: Border.all(color: AppColors.greenBorder),
                       ),
                       child: const Text(
                         'NATIONAL DNA & AFIS DATABASE',
-                        style: TextStyle(color: AppColors.green, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.8),
+                        style: TextStyle(color: AppColors.green, fontSize: 9.5, fontWeight: FontWeight.bold, letterSpacing: 0.6),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 Text(
                   'Unidentified Deceased Management & Forensic Cross-Matching System',
                   style: TextStyle(
                     color: titleColor,
                     fontWeight: FontWeight.w900,
-                    fontSize: isDesktop ? 26 : 20,
-                    height: 1.25,
-                    letterSpacing: -0.4,
+                    fontSize: isDesktop ? 21 : 17,
+                    height: 1.2,
+                    letterSpacing: -0.3,
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 6),
                 Text(
-                  'A specialized, centralized platform by Criminal Investigation Department (CID), Bangladesh Police. '
-                  'Search verified unidentified bodies recovered across all 64 districts using anthropological traits, tattoos, marks, and clothing.',
-                  style: TextStyle(color: subtitleColor, fontSize: 13, height: 1.5),
+                  'Centralized biometric & anthropological portal by CID Bangladesh Police across all 64 districts. Search unidentified deceased cases using scars, tattoos, physical characteristics, and recovered clothing.',
+                  style: TextStyle(color: subtitleColor, fontSize: 12, height: 1.4),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 14),
                 Wrap(
-                  spacing: 12,
+                  spacing: 10,
                   runSpacing: 8,
                   children: [
                     ElevatedButton.icon(
                       onPressed: widget.onReportFoundBody,
-                      icon: const Icon(Icons.report_problem, size: 16),
-                      label: const Text('Report Found Body (Emergency)'),
+                      icon: const Icon(Icons.report_problem_rounded, size: 14),
+                      label: const Text('Report Found Body (Emergency)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.red,
                         foregroundColor: Colors.white,
                         elevation: 0,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
                     ),
                     OutlinedButton.icon(
                       onPressed: widget.onRequestIoAccess,
-                      icon: const Icon(Icons.vpn_key_outlined, size: 16),
-                      label: const Text('Police Officer (IO) Access Request'),
+                      icon: const Icon(Icons.vpn_key_outlined, size: 14),
+                      label: const Text('Police Officer (IO) Access Request', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: isLight ? AppColors.slate800 : Colors.white,
                         side: BorderSide(color: isLight ? AppColors.slate300 : AppColors.darkBorder),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
                     ),
@@ -239,14 +320,14 @@ class _PublicHomeViewState extends State<PublicHomeView> {
             ),
           ),
           if (isDesktop) ...[
-            const SizedBox(width: 32),
+            const SizedBox(width: 24),
             Image.asset(
               'assets/images/cid-logo-blue.png',
-              height: 130,
+              height: 95,
               errorBuilder: (_, _, _) => Image.asset(
                 'assets/images/CID.png',
-                height: 130,
-                errorBuilder: (_, _, _) => const Icon(Icons.shield_outlined, color: AppColors.primary, size: 100),
+                height: 95,
+                errorBuilder: (_, _, _) => const Icon(Icons.shield_outlined, color: AppColors.primary, size: 80),
               ),
             ),
           ],
@@ -271,9 +352,9 @@ class _PublicHomeViewState extends State<PublicHomeView> {
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            mainAxisExtent: 88,
+            mainAxisSpacing: 10,
+            crossAxisSpacing: 10,
+            mainAxisExtent: 76,
           ),
           children: [
             KpiCard(
@@ -379,38 +460,50 @@ class _PublicHomeViewState extends State<PublicHomeView> {
 
           const SizedBox(height: 12),
 
-          // Quick Filter Shortcuts
+          // Quick Filter Shortcuts & Presets Bar
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                const Text('Quick Sex Filter: ', style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                const Icon(Icons.flash_on, size: 14, color: AppColors.gold),
+                const SizedBox(width: 4),
+                const Text('Forensic Presets: ', style: TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.bold)),
                 _quickFilterChip(
-                  label: 'All Genders',
-                  isSelected: udb.filters.gender == null || udb.filters.gender!.isEmpty,
-                  onTap: () => udb.setFilters(_cloneFilter(udb.filters, gender: '')),
+                  label: 'All Cases (${udb.totalRecords})',
+                  isSelected: udb.filters.quickPreset == null || udb.filters.quickPreset == 'all',
+                  onTap: () => udb.updateQuickPreset('all'),
                 ),
+                _quickFilterChip(
+                  label: 'DNA Archived (${udb.dnaAvailableCount})',
+                  isSelected: udb.filters.quickPreset == 'withDna',
+                  onTap: () => udb.updateQuickPreset(udb.filters.quickPreset == 'withDna' ? 'all' : 'withDna'),
+                ),
+                _quickFilterChip(
+                  label: 'AFIS 10-Print (${udb.afisAvailableCount})',
+                  isSelected: udb.filters.quickPreset == 'withAfis',
+                  onTap: () => udb.updateQuickPreset(udb.filters.quickPreset == 'withAfis' ? 'all' : 'withAfis'),
+                ),
+                _quickFilterChip(
+                  label: 'Water Immersed / Floaters',
+                  isSelected: udb.filters.quickPreset == 'floater',
+                  onTap: () => udb.updateQuickPreset(udb.filters.quickPreset == 'floater' ? 'all' : 'floater'),
+                ),
+                _quickFilterChip(
+                  label: 'Skeletal / Decomposed',
+                  isSelected: udb.filters.quickPreset == 'skeletal',
+                  onTap: () => udb.updateQuickPreset(udb.filters.quickPreset == 'skeletal' ? 'all' : 'skeletal'),
+                ),
+                const SizedBox(width: 14),
+                const Text('Sex: ', style: TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.bold)),
                 _quickFilterChip(
                   label: 'Male',
                   isSelected: udb.filters.gender == 'Male',
-                  onTap: () => udb.setFilters(_cloneFilter(udb.filters, gender: 'Male')),
+                  onTap: () => udb.setFilters(_cloneFilter(udb.filters, gender: udb.filters.gender == 'Male' ? '' : 'Male')),
                 ),
                 _quickFilterChip(
                   label: 'Female',
                   isSelected: udb.filters.gender == 'Female',
-                  onTap: () => udb.setFilters(_cloneFilter(udb.filters, gender: 'Female')),
-                ),
-                const SizedBox(width: 16),
-                const Text('Biometrics: ', style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
-                _quickFilterChip(
-                  label: 'Has DNA Profile',
-                  isSelected: udb.filters.hasDna == true,
-                  onTap: () => udb.setFilters(_cloneFilter(udb.filters, hasDna: udb.filters.hasDna == true ? null : true)),
-                ),
-                _quickFilterChip(
-                  label: 'Has AFIS Fingerprint',
-                  isSelected: udb.filters.hasFingerprint == true,
-                  onTap: () => udb.setFilters(_cloneFilter(udb.filters, hasFingerprint: udb.filters.hasFingerprint == true ? null : true)),
+                  onTap: () => udb.setFilters(_cloneFilter(udb.filters, gender: udb.filters.gender == 'Female' ? '' : 'Female')),
                 ),
               ],
             ),
@@ -466,6 +559,8 @@ class _PublicHomeViewState extends State<PublicHomeView> {
             fontWeight: FontWeight.bold,
           ),
         ),
+        if (f.quickPreset != null && f.quickPreset != 'all')
+          _chip('Preset: ${f.quickPreset}', () => udb.updateQuickPreset('all')),
         if (f.keywords != null && f.keywords!.isNotEmpty)
           _chip('Keyword: "${f.keywords}"', () => udb.updateKeywords('')),
         if (f.gender != null && f.gender!.isNotEmpty)
@@ -506,16 +601,14 @@ class _PublicHomeViewState extends State<PublicHomeView> {
   Widget _buildRecordGrid(bool isDesktop, List<UdbRecord> records, bool blurSensitive) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Columns are chosen automatically (cards are at most 440px wide) and
-        // every card has the same fixed height, whatever the window width.
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 440,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            mainAxisExtent: 450,
+            maxCrossAxisExtent: 390,
+            crossAxisSpacing: 14,
+            mainAxisSpacing: 14,
+            mainAxisExtent: 418,
           ),
           itemCount: records.length,
           itemBuilder: (context, index) {
@@ -595,6 +688,8 @@ class _PublicHomeViewState extends State<PublicHomeView> {
     String? status,
     bool? hasFingerprint,
     bool? hasDna,
+    String? quickPreset,
+    UdbSortOption? sortOption,
   }) {
     return UdbFilterParams(
       keywords: orig.keywords,
@@ -606,6 +701,8 @@ class _PublicHomeViewState extends State<PublicHomeView> {
       status: status ?? orig.status,
       hasFingerprint: hasFingerprint ?? orig.hasFingerprint,
       hasDna: hasDna ?? orig.hasDna,
+      quickPreset: quickPreset ?? orig.quickPreset,
+      sortOption: sortOption ?? orig.sortOption,
     );
   }
 }

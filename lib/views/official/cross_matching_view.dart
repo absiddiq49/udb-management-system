@@ -6,6 +6,8 @@ import '../../core/utils/responsive.dart';
 import '../../models/udb_record.dart';
 import '../../services/cross_matching_service.dart';
 import '../../providers/udb_provider.dart';
+import '../widgets/side_by_side_match_dialog.dart';
+import '../public/citizen_tip_dialog.dart';
 
 class CrossMatchingView extends StatefulWidget {
   final ValueChanged<UdbRecord> onSelectRecord;
@@ -31,6 +33,7 @@ class _CrossMatchingViewState extends State<CrossMatchingView> {
 
   List<MatchScoreResult>? _results;
   bool _isAnalyzing = false;
+  MissingPersonProfile? _currentMissingProfile;
 
   @override
   void dispose() {
@@ -45,26 +48,43 @@ class _CrossMatchingViewState extends State<CrossMatchingView> {
     super.dispose();
   }
 
+  void _loadPreset(MissingPersonProfile p) {
+    setState(() {
+      _nameController.text = p.fullName;
+      _gdController.text = p.gdNumber;
+      _thanaController.text = p.thana;
+      _districtController.text = p.district;
+      _gender = p.gender;
+      _ageController.text = p.age.toString();
+      _heightController.text = p.heightCm.toString();
+      _marksController.text = p.distinguishingMarks;
+      _clothingController.text = p.lastSeenClothing;
+    });
+    _runCrossMatch();
+  }
+
   void _runCrossMatch() {
     if (_formKey.currentState?.validate() ?? false) {
       final allRecords = context.read<UdbProvider>().allRecords;
       setState(() => _isAnalyzing = true);
 
-      Future.delayed(const Duration(milliseconds: 400), () {
-        if (!mounted) return;
-        final missing = MissingPersonProfile(
-          fullName: _nameController.text.trim(),
-          gdNumber: _gdController.text.trim(),
-          thana: _thanaController.text.trim(),
-          district: _districtController.text.trim(),
-          gender: _gender,
-          age: int.tryParse(_ageController.text.trim()) ?? 30,
-          heightCm: int.tryParse(_heightController.text.trim()) ?? 170,
-          distinguishingMarks: _marksController.text.trim(),
-          lastSeenClothing: _clothingController.text.trim(),
-          dateMissing: '2026-07-27',
-        );
+      final missing = MissingPersonProfile(
+        fullName: _nameController.text.trim(),
+        gdNumber: _gdController.text.trim(),
+        thana: _thanaController.text.trim(),
+        district: _districtController.text.trim(),
+        gender: _gender,
+        age: int.tryParse(_ageController.text.trim()) ?? 30,
+        heightCm: int.tryParse(_heightController.text.trim()) ?? 170,
+        distinguishingMarks: _marksController.text.trim(),
+        lastSeenClothing: _clothingController.text.trim(),
+        dateMissing: '2026-07-27',
+      );
 
+      _currentMissingProfile = missing;
+
+      Future.delayed(const Duration(milliseconds: 350), () {
+        if (!mounted) return;
         final matches = CrossMatchingService.calculateMatches(
           missing: missing,
           records: allRecords,
@@ -172,6 +192,8 @@ class _CrossMatchingViewState extends State<CrossMatchingView> {
   }
 
   Widget _buildInputForm(bool isLight, Color cardBg, Color borderColor, Color textPri) {
+    final samplePresets = CrossMatchingService.sampleProfiles;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -201,25 +223,65 @@ class _CrossMatchingViewState extends State<CrossMatchingView> {
                   'Ante-Mortem (Missing Person) Profile',
                   style: TextStyle(color: textPri, fontWeight: FontWeight.bold, fontSize: 14),
                 ),
-                const Spacer(),
-                TextButton(
-                  onPressed: () {
-                    setState(() {
-                      _nameController.text = 'Fatema Begum';
-                      _gdController.text = 'Kotwali PS Missing GD 88/2026';
-                      _thanaController.text = 'Kotwali';
-                      _districtController.text = 'Chattogram';
-                      _gender = 'Female';
-                      _ageController.text = '42';
-                      _heightController.text = '158';
-                      _marksController.text = 'Burn scar on forearm, pierced ears, gold crown';
-                      _clothingController.text = 'Maroon salwar kameez, black shawl, red glass bangles';
-                    });
-                  },
-                  child: const Text('Load Demo Case 2', style: TextStyle(color: AppColors.cyan, fontSize: 11)),
-                ),
               ],
             ),
+            const SizedBox(height: 10),
+
+            // Quick Preset Selection Strip
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: isLight ? AppColors.slate100 : AppColors.darkSurface,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.bolt, size: 14, color: AppColors.gold),
+                      SizedBox(width: 4),
+                      Text('Quick Test Presets (Load & Auto-Match):', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () => _loadPreset(samplePresets[0]),
+                        icon: const Icon(Icons.male, size: 14, color: AppColors.primary),
+                        label: const Text('Preset 1: Dhaka (Male, 28y)', style: TextStyle(fontSize: 11)),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                          backgroundColor: isLight ? Colors.white : AppColors.darkCardBg,
+                        ),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: () => _loadPreset(samplePresets[1]),
+                        icon: const Icon(Icons.female, size: 14, color: AppColors.goldDark),
+                        label: const Text('Preset 2: Ctg (Female, 42y)', style: TextStyle(fontSize: 11)),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                          backgroundColor: isLight ? Colors.white : AppColors.darkCardBg,
+                        ),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: () => _loadPreset(samplePresets[2]),
+                        icon: const Icon(Icons.help_outline, size: 14, color: AppColors.cyan),
+                        label: const Text('Preset 3: Sylhet (Youth, 18y)', style: TextStyle(fontSize: 11)),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                          backgroundColor: isLight ? Colors.white : AppColors.darkCardBg,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
             const SizedBox(height: 12),
             const Divider(),
             const SizedBox(height: 12),
@@ -244,7 +306,7 @@ class _CrossMatchingViewState extends State<CrossMatchingView> {
                   child: DropdownButtonFormField<String>(
                     initialValue: _gender,
                     decoration: const InputDecoration(labelText: 'Biological Sex *'),
-                    dropdownColor: AppColors.cardBg,
+                    dropdownColor: cardBg,
                     items: AppConstants.genders.map((g) => DropdownMenuItem(value: g, child: Text(g))).toList(),
                     onChanged: (v) => setState(() => _gender = v!),
                   ),
@@ -443,15 +505,15 @@ class _CrossMatchingViewState extends State<CrossMatchingView> {
     final score = res.score.round();
 
     Color scoreColor = AppColors.green;
-    if (score < 50) scoreColor = AppColors.amber;
-    if (score < 40) scoreColor = AppColors.textMuted;
+    if (score < 70) scoreColor = AppColors.gold;
+    if (score < 45) scoreColor = AppColors.slate500;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: cardBg,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: score >= 70 ? AppColors.green.withValues(alpha: 0.6) : borderColor),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: score >= 70 ? AppColors.green.withValues(alpha: 0.6) : borderColor, width: score >= 70 ? 1.5 : 1),
         boxShadow: isLight
             ? [
                 BoxShadow(
@@ -472,12 +534,12 @@ class _CrossMatchingViewState extends State<CrossMatchingView> {
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: scoreColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: scoreColor),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.bolt, color: scoreColor, size: 14),
+                    Icon(Icons.bolt, color: scoreColor, size: 16),
                     const SizedBox(width: 4),
                     Text(
                       '$score% Match',
@@ -491,31 +553,64 @@ class _CrossMatchingViewState extends State<CrossMatchingView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      record.referenceNo,
-                      style: TextStyle(color: textPri, fontWeight: FontWeight.bold, fontSize: 15),
+                    Row(
+                      children: [
+                        Text(
+                          record.referenceNo,
+                          style: TextStyle(color: textPri, fontWeight: FontWeight.bold, fontSize: 15),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryLight,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            res.confidenceLevel.toUpperCase(),
+                            style: const TextStyle(color: AppColors.primary, fontSize: 9.5, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
                     ),
+                    const SizedBox(height: 2),
                     Text(
-                      'Found on ${record.dateFound} • ${record.thana}, ${record.district} (${record.placeFound})',
+                      'Found on ${record.dateFound} at ${record.thana}, ${record.district} (${record.placeFound})',
                       style: TextStyle(color: textSec, fontSize: 11),
                     ),
                   ],
                 ),
               ),
-              OutlinedButton.icon(
-                onPressed: () => widget.onSelectRecord(record),
-                icon: const Icon(Icons.open_in_new, size: 13),
-                label: const Text('Open Dossier', style: TextStyle(fontSize: 11)),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                ),
-              ),
             ],
+          ),
+
+          const SizedBox(height: 12),
+
+          // Vector Scoring Breakdown Bars
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: isLight ? AppColors.slate100 : AppColors.darkSurface,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Expanded(child: _miniBar('Sex', res.sexScore, 30, AppColors.blue, textSec)),
+                const SizedBox(width: 8),
+                Expanded(child: _miniBar('Age', res.ageScore, 25, AppColors.green, textSec)),
+                const SizedBox(width: 8),
+                Expanded(child: _miniBar('Height', res.heightScore, 20, AppColors.cyan, textSec)),
+                const SizedBox(width: 8),
+                Expanded(child: _miniBar('Region', res.districtScore, 10, AppColors.gold, textSec)),
+                const SizedBox(width: 8),
+                Expanded(child: _miniBar('Markers', res.keywordScore, 15, AppColors.purple, textSec)),
+              ],
+            ),
           ),
 
           const SizedBox(height: 10),
 
-          // Match Reasons
+          // Match Reasons List
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -527,7 +622,7 @@ class _CrossMatchingViewState extends State<CrossMatchingView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Alignment Vectors:',
+                  'Algorithm Alignment Breakdown:',
                   style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 11),
                 ),
                 const SizedBox(height: 6),
@@ -540,7 +635,7 @@ class _CrossMatchingViewState extends State<CrossMatchingView> {
                         const Icon(Icons.check_circle_rounded, color: AppColors.green, size: 14),
                         const SizedBox(width: 6),
                         Expanded(
-                          child: Text(r, style: TextStyle(color: textPri, fontSize: 12)),
+                          child: Text(r, style: TextStyle(color: textPri, fontSize: 11.5)),
                         ),
                       ],
                     ),
@@ -549,8 +644,88 @@ class _CrossMatchingViewState extends State<CrossMatchingView> {
               ],
             ),
           ),
+
+          const SizedBox(height: 12),
+
+          // Actions Row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              OutlinedButton.icon(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (_) => CitizenTipDialog(bodyReference: record.referenceNo),
+                  );
+                },
+                icon: const Icon(Icons.record_voice_over_outlined, size: 13),
+                label: const Text('Submit Relative Lead', style: TextStyle(fontSize: 11)),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.goldDark,
+                  side: const BorderSide(color: AppColors.goldBorder),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                ),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton.icon(
+                onPressed: () {
+                  if (_currentMissingProfile != null) {
+                    showDialog(
+                      context: context,
+                      builder: (_) => SideBySideMatchDialog(
+                        missing: _currentMissingProfile!,
+                        matchResult: res,
+                        onOpenDossier: widget.onSelectRecord,
+                      ),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.compare_arrows_rounded, size: 14),
+                label: const Text('Interpol DVI Side-by-Side Compare', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.goldLight,
+                  foregroundColor: AppColors.goldDark,
+                  side: const BorderSide(color: AppColors.goldBorder),
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                ),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton.icon(
+                onPressed: () => widget.onSelectRecord(record),
+                icon: const Icon(Icons.open_in_new, size: 13),
+                label: const Text('Open Dossier', style: TextStyle(fontSize: 11)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
+    );
+  }
+
+  Widget _miniBar(String title, double val, double max, Color color, Color textSec) {
+    final pct = (val / max).clamp(0.0, 1.0);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: TextStyle(color: textSec, fontSize: 9.5, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 2),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(2),
+          child: LinearProgressIndicator(
+            value: pct,
+            minHeight: 4,
+            backgroundColor: color.withValues(alpha: 0.15),
+            valueColor: AlwaysStoppedAnimation(color),
+          ),
+        ),
+      ],
     );
   }
 }

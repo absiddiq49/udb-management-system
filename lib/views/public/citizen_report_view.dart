@@ -16,7 +16,8 @@ class CitizenReportView extends StatefulWidget {
   State<CitizenReportView> createState() => _CitizenReportViewState();
 }
 
-class _CitizenReportViewState extends State<CitizenReportView> {
+class _CitizenReportViewState extends State<CitizenReportView> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
   final _formKey = GlobalKey<FormState>();
 
   String? _division = 'Dhaka';
@@ -29,11 +30,23 @@ class _CitizenReportViewState extends State<CitizenReportView> {
   final _reporterPhoneController = TextEditingController();
   final _reporterNidController = TextEditingController();
 
+  final _trackCodeController = TextEditingController(text: 'CIT-REP-2026-0042');
+  CitizenReport? _searchedReport;
+  bool _searchExecuted = false;
+  bool _hasPhotoAttached = false;
+
   String? _generatedReportCode;
   bool _submitted = false;
 
   @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
   void dispose() {
+    _tabController.dispose();
     _districtController.dispose();
     _thanaController.dispose();
     _spotLocationController.dispose();
@@ -42,13 +55,24 @@ class _CitizenReportViewState extends State<CitizenReportView> {
     _reporterNameController.dispose();
     _reporterPhoneController.dispose();
     _reporterNidController.dispose();
+    _trackCodeController.dispose();
     super.dispose();
+  }
+
+  void _searchReportStatus() {
+    final code = _trackCodeController.text.trim();
+    if (code.isEmpty) return;
+
+    final found = context.read<RequestProvider>().findCitizenReport(code);
+    setState(() {
+      _searchedReport = found;
+      _searchExecuted = true;
+    });
   }
 
   void _submit() {
     if (_formKey.currentState?.validate() ?? false) {
-      final code =
-          'CIT-REP-2026-${(1000 + DateTime.now().millisecond).toString()}';
+      final code = 'CIT-REP-2026-${(1000 + DateTime.now().millisecond).toString()}';
       final report = CitizenReport(
         id: 'cit_${DateTime.now().millisecondsSinceEpoch}',
         reportReference: code,
@@ -65,6 +89,9 @@ class _CitizenReportViewState extends State<CitizenReportView> {
         timeSpotted: 'Current',
         description: _descriptionController.text.trim(),
         conditionDescription: _conditionController.text.trim(),
+        photoUrls: _hasPhotoAttached
+            ? ['https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=600&q=80']
+            : const [],
         status: 'PENDING_POLICE_DISPATCH',
         submittedAt: 'Just now',
       );
@@ -83,12 +110,8 @@ class _CitizenReportViewState extends State<CitizenReportView> {
     final isLight = Theme.of(context).brightness == Brightness.light;
     final cardBg = isLight ? Colors.white : AppColors.darkCardBg;
     final borderColor = isLight ? AppColors.lightBorder : AppColors.darkBorder;
-    final textPri = isLight
-        ? AppColors.lightTextPrimary
-        : AppColors.darkTextPrimary;
-    final textSec = isLight
-        ? AppColors.lightTextSecondary
-        : AppColors.darkTextSecondary;
+    final textPri = isLight ? AppColors.lightTextPrimary : AppColors.darkTextPrimary;
+    final textSec = isLight ? AppColors.lightTextSecondary : AppColors.darkTextSecondary;
 
     return SingleChildScrollView(
       padding: EdgeInsets.symmetric(
@@ -100,13 +123,70 @@ class _CitizenReportViewState extends State<CitizenReportView> {
           constraints: const BoxConstraints(maxWidth: 860),
           child: _submitted
               ? _buildSuccessCard(isLight, cardBg, textPri, textSec)
-              : _buildFormCard(
-                  isDesktop,
-                  isLight,
-                  cardBg,
-                  borderColor,
-                  textPri,
-                  textSec,
+              : Column(
+                  children: [
+                    // Top Segmented Switcher (New Report vs Track Status)
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: isLight ? AppColors.slate100 : AppColors.darkSurface,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: borderColor),
+                      ),
+                      child: TabBar(
+                        controller: _tabController,
+                        indicator: BoxDecoration(
+                          color: isLight ? Colors.white : AppColors.darkCardBg,
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: isLight
+                              ? [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.05),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 1),
+                                  )
+                                ]
+                              : null,
+                        ),
+                        indicatorSize: TabBarIndicatorSize.tab,
+                        dividerColor: Colors.transparent,
+                        labelColor: AppColors.primary,
+                        unselectedLabelColor: textSec,
+                        labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        tabs: const [
+                          Tab(text: '1. Report Found Human Remains (Emergency)'),
+                          Tab(text: '2. Track Submitted Report Status'),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Tab View
+                    AnimatedBuilder(
+                      animation: _tabController,
+                      builder: (context, _) {
+                        if (_tabController.index == 0) {
+                          return _buildFormCard(
+                            isDesktop,
+                            isLight,
+                            cardBg,
+                            borderColor,
+                            textPri,
+                            textSec,
+                          );
+                        } else {
+                          return _buildTrackingCard(
+                            isLight,
+                            cardBg,
+                            borderColor,
+                            textPri,
+                            textSec,
+                          );
+                        }
+                      },
+                    ),
+                  ],
                 ),
         ),
       ),
@@ -210,7 +290,48 @@ class _CitizenReportViewState extends State<CitizenReportView> {
             ),
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
+
+          // Emergency 999 Hotline Alert Strip
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: AppColors.redLight,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.redBorder),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.phone_in_talk, color: AppColors.red, size: 22),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Direct Police Emergency Helpline: Dial 999',
+                        style: TextStyle(color: AppColors.redDark, fontSize: 13, fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        'For live emergencies or immediately witnessed human remains, call 999 or CID Control (+880 2 48312000).',
+                        style: TextStyle(color: AppColors.redDark, fontSize: 11),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: AppColors.red,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Text('DIAL 999', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
 
           // Location Section
           _sectionCard(
@@ -338,6 +459,56 @@ class _CitizenReportViewState extends State<CitizenReportView> {
                       'Your NID card number for verified police reporting',
                 ),
               ),
+            ],
+          ),
+
+          const SizedBox(height: 20),
+
+          // Photo Attachment
+          _sectionCard(
+            title: '4. Crime Scene / Location Photos (Optional)',
+            icon: Icons.camera_alt_outlined,
+            children: [
+              Text(
+                'Attach photos of the scene, surrounding landmarks, or clothing. Do not post graphic photos to social media.',
+                style: TextStyle(color: textSec, fontSize: 12),
+              ),
+              const SizedBox(height: 12),
+              if (_hasPhotoAttached)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.greenLight,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.greenBorder),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.check_circle, color: AppColors.green, size: 20),
+                      const SizedBox(width: 10),
+                      const Expanded(
+                        child: Text(
+                          '1 Crime scene location photo attached (Forensic_Discovery_Photo_1.jpg)',
+                          style: TextStyle(color: AppColors.greenDark, fontWeight: FontWeight.bold, fontSize: 12),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => setState(() => _hasPhotoAttached = false),
+                        child: const Text('Remove', style: TextStyle(color: AppColors.red, fontSize: 11)),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                OutlinedButton.icon(
+                  onPressed: () => setState(() => _hasPhotoAttached = true),
+                  icon: const Icon(Icons.add_a_photo_outlined, size: 16),
+                  label: const Text('Attach Location / Deceased Photo'),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.primaryBorder),
+                    foregroundColor: AppColors.primary,
+                  ),
+                ),
             ],
           ),
 
@@ -514,6 +685,257 @@ class _CitizenReportViewState extends State<CitizenReportView> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildTrackingCard(
+    bool isLight,
+    Color cardBg,
+    Color borderColor,
+    Color textPri,
+    Color textSec,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: borderColor),
+        boxShadow: isLight
+            ? [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.02),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                )
+              ]
+            : null,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.track_changes, color: AppColors.primary, size: 22),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Live Citizen Report Tracking Portal',
+                      style: TextStyle(color: textPri, fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Enter your emergency tracking code (e.g. CIT-REP-2026-0042) to check police dispatch status.',
+                      style: TextStyle(color: textSec, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 20),
+
+          // Search Field
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _trackCodeController,
+                  decoration: const InputDecoration(
+                    labelText: 'Report Tracking Reference *',
+                    hintText: 'e.g. CIT-REP-2026-0042',
+                    prefixIcon: Icon(Icons.search, size: 18),
+                  ),
+                  onSubmitted: (_) => _searchReportStatus(),
+                ),
+              ),
+              const SizedBox(width: 12),
+              ElevatedButton.icon(
+                onPressed: _searchReportStatus,
+                icon: const Icon(Icons.search, size: 16),
+                label: const Text('Track Report'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 24),
+
+          // Results Area
+          if (_searchedReport != null) ...[
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: isLight ? AppColors.slate50 : AppColors.darkSurface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: isLight ? AppColors.slate200 : AppColors.darkBorder),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Report Ref: ${_searchedReport!.reportReference}',
+                        style: TextStyle(color: textPri, fontWeight: FontWeight.bold, fontSize: 15),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.greenLight,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: AppColors.greenBorder),
+                        ),
+                        child: Text(
+                          _searchedReport!.status.replaceAll('_', ' '),
+                          style: const TextStyle(color: AppColors.greenDark, fontWeight: FontWeight.bold, fontSize: 11),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  const Divider(),
+                  const SizedBox(height: 12),
+                  _trackRow('Recovery Location', '${_searchedReport!.spotLocation}, ${_searchedReport!.thana}, ${_searchedReport!.district}', textSec, textPri),
+                  _trackRow('Reported Date & Time', '${_searchedReport!.dateSpotted} (${_searchedReport!.timeSpotted})', textSec, textPri),
+                  _trackRow('Deceased Description', _searchedReport!.description, textSec, textPri),
+                  _trackRow('Condition Observed', _searchedReport!.conditionDescription, textSec, textPri),
+                  _trackRow('Jurisdictional Police Station', '${_searchedReport!.thana} PS, ${_searchedReport!.district} District', textSec, textPri),
+
+                  const SizedBox(height: 18),
+
+                  // 4-Step Police Status Pipeline
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: isLight ? Colors.white : AppColors.darkCardBg,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: isLight ? AppColors.slate200 : AppColors.darkBorder),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Police Dispatch & Investigation Progress',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
+                        ),
+                        const SizedBox(height: 12),
+                        _stepRow(1, 'Report Logged at CID Central Intelligence Bureau', 'Logged successfully into national dispatch queue.', true, isLight),
+                        _stepLine(true),
+                        _stepRow(2, 'Urgent Dispatch Alert Sent to ${_searchedReport!.thana} Thana', 'Duty Officer acknowledged receipt.', true, isLight),
+                        _stepLine(true),
+                        _stepRow(3, 'Investigation Officer & Crime Scene Unit Dispatched', 'Field unit en route to spot.', true, isLight),
+                        _stepLine(false),
+                        _stepRow(4, 'Formal CrPC 174 Police Inquest & Hospital Mortuary Intake', 'Surat-hal report pending submission.', false, isLight),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ] else if (_searchExecuted) ...[
+            Container(
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                color: isLight ? AppColors.slate50 : AppColors.darkSurface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: isLight ? AppColors.slate200 : AppColors.darkBorder),
+              ),
+              child: Center(
+                child: Column(
+                  children: [
+                    const Icon(Icons.error_outline, size: 42, color: AppColors.red),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Report Reference Not Found',
+                      style: TextStyle(color: textPri, fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Please verify the tracking code from your submission receipt (e.g. CIT-REP-2026-0042).',
+                      style: TextStyle(color: textSec, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _trackRow(String label, String value, Color textSec, Color textPri) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 170,
+            child: Text(label, style: TextStyle(color: textSec, fontSize: 11.5, fontWeight: FontWeight.w600)),
+          ),
+          Expanded(
+            child: Text(value.isNotEmpty ? value : 'Not specified', style: TextStyle(color: textPri, fontSize: 12)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _stepRow(int step, String title, String desc, bool isDone, bool isLight) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        CircleAvatar(
+          radius: 10,
+          backgroundColor: isDone ? AppColors.green : (isLight ? AppColors.slate200 : AppColors.darkBorder),
+          child: Icon(isDone ? Icons.check : Icons.circle, size: 10, color: isDone ? Colors.white : AppColors.slate400),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontWeight: isDone ? FontWeight.bold : FontWeight.w500,
+                  fontSize: 12,
+                  color: isDone ? (isLight ? AppColors.slate900 : Colors.white) : AppColors.slate400,
+                ),
+              ),
+              Text(desc, style: TextStyle(color: AppColors.slate500, fontSize: 10.5)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _stepLine(bool isDone) {
+    return Container(
+      width: 2,
+      height: 16,
+      margin: const EdgeInsets.only(left: 9),
+      color: isDone ? AppColors.green : AppColors.slate300,
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
@@ -20,33 +21,79 @@ class _IoRequestsManagerViewState extends State<IoRequestsManagerView> {
     final auth = context.read<AuthProvider>();
     final reviewerName = '${auth.session.rank} ${auth.session.fullName}';
 
-    if (approve) {
-      context.read<RequestProvider>().reviewIORequest(
-            requestId: req.id,
-            approve: true,
-            reviewerName: reviewerName,
-            notes: 'Approved by $reviewerName (Valid for 72 hours)',
-          );
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Access Request ${req.requestCode} Approved. Pass token generated & SMS dispatched.'),
-          backgroundColor: AppColors.green,
+    final notesController = TextEditingController(
+      text: approve
+          ? 'Verified against GD/FIR records. 14-day full forensic access granted.'
+          : 'Administrative denial: Insufficient Thana case documentation.',
+    );
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              approve ? Icons.check_circle_outline : Icons.cancel_outlined,
+              color: approve ? AppColors.green : AppColors.red,
+            ),
+            const SizedBox(width: 8),
+            Text(approve ? 'Approve Access Request' : 'Decline Access Request'),
+          ],
         ),
-      );
-    } else {
-      context.read<RequestProvider>().reviewIORequest(
-            requestId: req.id,
-            approve: false,
-            reviewerName: reviewerName,
-            notes: 'Administrative denial: insufficient Thana verification.',
-          );
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Access Request ${req.requestCode} Rejected.'),
-          backgroundColor: AppColors.red,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Applicant: ${req.officerRank} ${req.officerName} (${req.bpNumber})',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            Text('Target Case: ${req.targetCaseReference}', style: const TextStyle(fontSize: 12)),
+            const SizedBox(height: 12),
+            TextField(
+              controller: notesController,
+              maxLines: 2,
+              decoration: const InputDecoration(
+                labelText: 'Official Endorsement / Rejection Notes',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
         ),
-      );
-    }
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              context.read<RequestProvider>().reviewIORequest(
+                    requestId: req.id,
+                    approve: approve,
+                    reviewerName: reviewerName,
+                    notes: notesController.text.trim(),
+                  );
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    approve
+                        ? 'Request ${req.requestCode} Approved. Pass token generated.'
+                        : 'Request ${req.requestCode} Rejected.',
+                  ),
+                  backgroundColor: approve ? AppColors.green : AppColors.red,
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: approve ? AppColors.green : AppColors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: Text(approve ? 'Confirm & Authorize' : 'Confirm Rejection'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -147,9 +194,9 @@ class _IoRequestsManagerViewState extends State<IoRequestsManagerView> {
                   const SizedBox(width: 8),
                   _filterButton('Pending (${reqProvider.pendingRequestsCount})', 'pending', isLight, textSec),
                   const SizedBox(width: 8),
-                  _filterButton('Approved', 'approved', isLight, textSec),
+                  _filterButton('Approved (${allRequests.where((r) => r.isApproved).length})', 'approved', isLight, textSec),
                   const SizedBox(width: 8),
-                  _filterButton('Rejected', 'rejected', isLight, textSec),
+                  _filterButton('Rejected (${allRequests.where((r) => r.isRejected).length})', 'rejected', isLight, textSec),
                 ],
               ),
 
@@ -164,7 +211,7 @@ class _IoRequestsManagerViewState extends State<IoRequestsManagerView> {
                   separatorBuilder: (_, _) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
                     final req = filtered[index];
-                    return _buildRequestCard(req, isLight, cardBg, borderColor, textPri, textSec);
+                    return _buildRequestCard(req, isLight, cardBg, borderColor, textPri, textSec, isDesktop);
                   },
                 )
               else
@@ -208,7 +255,15 @@ class _IoRequestsManagerViewState extends State<IoRequestsManagerView> {
     );
   }
 
-  Widget _buildRequestCard(OfficialAccessRequest req, bool isLight, Color cardBg, Color borderColor, Color textPri, Color textSec) {
+  Widget _buildRequestCard(
+    OfficialAccessRequest req,
+    bool isLight,
+    Color cardBg,
+    Color borderColor,
+    Color textPri,
+    Color textSec,
+    bool isDesktop,
+  ) {
     Color statusBg = AppColors.goldLight;
     Color statusColor = AppColors.gold;
     Color statusBorder = AppColors.goldBorder;
@@ -296,14 +351,32 @@ class _IoRequestsManagerViewState extends State<IoRequestsManagerView> {
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: isLight ? AppColors.slate200 : AppColors.darkBorder),
             ),
-            child: Row(
-              children: [
-                Expanded(child: _field('Posting Unit / Thana', req.postingUnit, isLight, textPri)),
-                Expanded(child: _field('Target Case', req.targetCaseReference, isLight, textPri)),
-                Expanded(child: _field('Investigation GD/FIR', req.investigationGdFir, isLight, textPri)),
-                Expanded(child: _field('Contact', '${req.contactPhone} • ${req.officialEmail}', isLight, textPri)),
-              ],
-            ),
+            child: isDesktop
+                ? Row(
+                    children: [
+                      Expanded(child: _field('Posting Unit / Thana', req.postingUnit, isLight, textPri)),
+                      Expanded(child: _field('Target Case', req.targetCaseReference, isLight, textPri)),
+                      Expanded(child: _field('Investigation GD/FIR', req.investigationGdFir, isLight, textPri)),
+                      Expanded(child: _field('Contact', '${req.contactPhone} • ${req.officialEmail}', isLight, textPri)),
+                    ],
+                  )
+                : Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(child: _field('Posting Unit / Thana', req.postingUnit, isLight, textPri)),
+                          Expanded(child: _field('Target Case', req.targetCaseReference, isLight, textPri)),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(child: _field('Investigation GD/FIR', req.investigationGdFir, isLight, textPri)),
+                          Expanded(child: _field('Contact', '${req.contactPhone}', isLight, textPri)),
+                        ],
+                      ),
+                    ],
+                  ),
           ),
 
           const SizedBox(height: 12),
@@ -316,7 +389,7 @@ class _IoRequestsManagerViewState extends State<IoRequestsManagerView> {
           if (req.accessToken != null) ...[
             const SizedBox(height: 10),
             Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
                 color: AppColors.greenLight,
                 borderRadius: BorderRadius.circular(8),
@@ -326,12 +399,35 @@ class _IoRequestsManagerViewState extends State<IoRequestsManagerView> {
                 children: [
                   const Icon(Icons.key, color: AppColors.green, size: 16),
                   const SizedBox(width: 8),
-                  Text(
-                    'Active Token Pass: ${req.accessToken} (${req.tokenExpiresAt})',
-                    style: const TextStyle(color: AppColors.green, fontSize: 12, fontWeight: FontWeight.bold),
+                  Expanded(
+                    child: Text(
+                      'Active Token Pass: ${req.accessToken} (${req.tokenExpiresAt ?? '14 Days'})',
+                      style: const TextStyle(color: AppColors.green, fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.copy_rounded, size: 16, color: AppColors.green),
+                    tooltip: 'Copy Access Token',
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: req.accessToken!));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Access Token copied to clipboard!'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
+            ),
+          ],
+
+          if (req.reviewedBy != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              'Endorsed by: ${req.reviewedBy} — ${req.reviewNotes ?? ''}',
+              style: TextStyle(color: textSec, fontSize: 11, fontStyle: FontStyle.italic),
             ),
           ],
 

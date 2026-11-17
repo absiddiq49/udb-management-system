@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
@@ -7,6 +8,7 @@ import '../../providers/udb_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../widgets/sensitive_image_card.dart';
 import '../widgets/gazette_notice_dialog.dart';
+import '../widgets/photo_lightbox_dialog.dart';
 import 'citizen_tip_dialog.dart';
 
 class PublicDossierView extends StatefulWidget {
@@ -63,11 +65,29 @@ class _PublicDossierViewState extends State<PublicDossierView> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  TextButton.icon(
-                    onPressed: widget.onBack,
-                    icon: const Icon(Icons.arrow_back, size: 16),
-                    label: const Text('Back to Deceased Index'),
-                    style: TextButton.styleFrom(foregroundColor: textSec),
+                  Row(
+                    children: [
+                      TextButton.icon(
+                        onPressed: widget.onBack,
+                        icon: const Icon(Icons.arrow_back, size: 16),
+                        label: const Text('Back to Deceased Index'),
+                        style: TextButton.styleFrom(foregroundColor: textSec),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: const Icon(Icons.share_outlined, size: 18, color: AppColors.primary),
+                        tooltip: 'Copy Case Reference & Share Link',
+                        onPressed: () {
+                          Clipboard.setData(ClipboardData(text: 'CID UDB Case Ref: ${record.referenceNo} (${record.thana}, ${record.district}) - GD: ${record.gdCaseReference}'));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Case Reference ${record.referenceNo} copied to clipboard.'),
+                              backgroundColor: AppColors.primary,
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                   Row(
                     children: [
@@ -208,6 +228,11 @@ class _PublicDossierViewState extends State<PublicDossierView> {
 
               const SizedBox(height: 20),
 
+              // Case Verification Milestone Stepper
+              _buildCaseMilestoneTracker(record, isLight, cardBg, borderColor, textPri, textSec),
+
+              const SizedBox(height: 20),
+
               // Forensic Photographic Evidence Gallery
               Container(
                 padding: const EdgeInsets.all(20),
@@ -244,14 +269,39 @@ class _PublicDossierViewState extends State<PublicDossierView> {
                             ),
                           ],
                         ),
-                        OutlinedButton.icon(
-                          onPressed: () => udb.toggleBlur(),
-                          icon: Icon(udb.blurSensitive ? Icons.visibility_off : Icons.visibility, size: 14),
-                          label: Text(udb.blurSensitive ? 'Reveal All Photos' : 'Blur Sensitive Photos'),
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: udb.blurSensitive ? AppColors.amber : AppColors.gold),
-                            foregroundColor: udb.blurSensitive ? AppColors.amber : AppColors.gold,
-                          ),
+                        Row(
+                          children: [
+                            if (photos.isNotEmpty) ...[
+                              OutlinedButton.icon(
+                                onPressed: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (_) => PhotoLightboxDialog(
+                                      photos: photos,
+                                      initialIndex: _activePhotoIndex,
+                                      initialBlur: udb.blurSensitive,
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(Icons.fullscreen_rounded, size: 16),
+                                label: const Text('Full-Screen Lightbox'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppColors.primary,
+                                  side: const BorderSide(color: AppColors.primaryBorder),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                            ],
+                            OutlinedButton.icon(
+                              onPressed: () => udb.toggleBlur(),
+                              icon: Icon(udb.blurSensitive ? Icons.visibility_off : Icons.visibility, size: 14),
+                              label: Text(udb.blurSensitive ? 'Reveal All Photos' : 'Blur Sensitive Photos'),
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(color: udb.blurSensitive ? AppColors.amber : AppColors.gold),
+                                foregroundColor: udb.blurSensitive ? AppColors.amber : AppColors.gold,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -556,6 +606,111 @@ class _PublicDossierViewState extends State<PublicDossierView> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildCaseMilestoneTracker(
+    UdbRecord record,
+    bool isLight,
+    Color cardBg,
+    Color border,
+    Color textPri,
+    Color textSec,
+  ) {
+    final hasInquest = record.documents.any((d) => d.type == 'inquest_report');
+    final hasAutopsy = record.documents.any((d) => d.type == 'postmortem_report');
+    final hasBio = record.hasDna || record.hasFingerprint;
+    final isGazetted = record.isPublicPublished;
+    final isIdentified = record.status.toLowerCase().contains('identified');
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.timeline_rounded, color: AppColors.primary, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                'CrPC & Interpol DVI Legal Case Progression Timeline',
+                style: TextStyle(color: textPri, fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _milestoneItem('1. Inquest Filed', 'CrPC §174', hasInquest || record.gdCaseReference.isNotEmpty, AppColors.blue, isLight),
+                _milestoneConnector(true, AppColors.blue),
+                _milestoneItem('2. Autopsy Done', record.postmortemReference, hasAutopsy, AppColors.green, isLight),
+                _milestoneConnector(hasAutopsy, AppColors.green),
+                _milestoneItem('3. Biometrics DNA/AFIS', record.hasDna ? 'DNA Profiled' : 'Pending', hasBio, AppColors.purple, isLight),
+                _milestoneConnector(hasBio, AppColors.purple),
+                _milestoneItem('4. Gazette Published', 'Public Notice', isGazetted, AppColors.gold, isLight),
+                _milestoneConnector(isGazetted, AppColors.gold),
+                _milestoneItem('5. Identification', record.status, isIdentified, AppColors.green, isLight),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _milestoneItem(String title, String subtitle, bool isDone, Color accentColor, bool isLight) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        CircleAvatar(
+          radius: 12,
+          backgroundColor: isDone ? accentColor : (isLight ? AppColors.slate200 : AppColors.darkBorder),
+          child: Icon(
+            isDone ? Icons.check : Icons.circle,
+            size: 13,
+            color: isDone ? Colors.white : AppColors.slate400,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: isDone ? FontWeight.bold : FontWeight.w500,
+                color: isDone ? (isLight ? AppColors.slate900 : Colors.white) : AppColors.slate400,
+              ),
+            ),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 9.5,
+                color: isDone ? accentColor : AppColors.slate400,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _milestoneConnector(bool isDone, Color color) {
+    return Container(
+      width: 28,
+      height: 2,
+      margin: const EdgeInsets.symmetric(horizontal: 8),
+      color: isDone ? color : AppColors.slate300,
     );
   }
 }

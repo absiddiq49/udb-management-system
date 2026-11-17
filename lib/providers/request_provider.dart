@@ -44,8 +44,26 @@ class RequestProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  CitizenReport? findCitizenReport(String code) {
+    return _repository.findCitizenReportByReference(code);
+  }
+
+  void updateCitizenReportStatus(String reportId, String newStatus) {
+    _repository.updateCitizenReportStatus(reportId, newStatus);
+    notifyListeners();
+  }
+
+  OfficialAccessRequest? findAccessRequest(String code) {
+    return _repository.findAccessRequestByCode(code);
+  }
+
   void submitCitizenTip(CitizenTip tip) {
     _repository.submitCitizenTip(tip);
+    notifyListeners();
+  }
+
+  void updateTipStatus(String tipId, String newStatus) {
+    _repository.updateTipStatus(tipId, newStatus);
     notifyListeners();
   }
 }

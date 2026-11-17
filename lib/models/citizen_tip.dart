@@ -26,5 +26,32 @@ class CitizenTip {
     this.status = 'NEW_LEAD',
     required this.submittedAt,
   });
+
+  CitizenTip copyWith({
+    String? status,
+    String? claimantName,
+    String? claimantPhone,
+    String? claimantEmail,
+    String? relationshipToMissing,
+    String? missingPersonName,
+    String? missingPersonGd,
+    String? thanaFiled,
+    String? similarityReasons,
+  }) {
+    return CitizenTip(
+      id: id,
+      bodyReference: bodyReference,
+      claimantName: claimantName ?? this.claimantName,
+      claimantPhone: claimantPhone ?? this.claimantPhone,
+      claimantEmail: claimantEmail ?? this.claimantEmail,
+      relationshipToMissing: relationshipToMissing ?? this.relationshipToMissing,
+      missingPersonName: missingPersonName ?? this.missingPersonName,
+      missingPersonGd: missingPersonGd ?? this.missingPersonGd,
+      thanaFiled: thanaFiled ?? this.thanaFiled,
+      similarityReasons: similarityReasons ?? this.similarityReasons,
+      status: status ?? this.status,
+      submittedAt: submittedAt,
+    );
+  }
 }
 

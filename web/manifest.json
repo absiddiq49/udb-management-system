@@ -1,11 +1,11 @@
 {
-    "name": "unidentified_dead_body",
-    "short_name": "unidentified_dead_body",
+    "name": "CID Bangladesh - UDB Management System",
+    "short_name": "CID UDB-MS",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#0F172A",
+    "theme_color": "#2563EB",
+    "description": "Criminal Investigation Department (CID) Unidentified Dead Body Management System",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
