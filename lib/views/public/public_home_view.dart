@@ -4,12 +4,12 @@ import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../../models/udb_record.dart';
 import '../../providers/udb_provider.dart';
-import '../../services/udb_repository.dart';
-import '../widgets/kpi_card.dart';
+import '../../providers/locale_provider.dart';
 import '../widgets/case_card.dart';
-import '../widgets/filter_drawer.dart';
 import '../widgets/app_footer.dart';
 import '../widgets/forensic_table_view.dart';
+import '../widgets/zipnet_filter_dialog.dart';
+import '../widgets/zipnet_search_dialog.dart';
 
 class PublicHomeView extends StatefulWidget {
   final ValueChanged<UdbRecord> onSelectRecord;
@@ -29,8 +29,7 @@ class PublicHomeView extends StatefulWidget {
 
 class _PublicHomeViewState extends State<PublicHomeView> {
   final _searchController = TextEditingController();
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  bool _isTableView = false;
+  bool _isTableView = true; // UDBMS Default is Forensic Data Table View
 
   @override
   void dispose() {
@@ -38,155 +37,71 @@ class _PublicHomeViewState extends State<PublicHomeView> {
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final udb = context.watch<UdbProvider>();
-    final isDesktop = Responsive.isDesktop(context);
-    final records = udb.filteredRecords;
-
-    return Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: Colors.transparent,
-      endDrawer: FilterDrawer(
+  void _openFilterDialog(BuildContext context, UdbProvider udb) {
+    showDialog(
+      context: context,
+      builder: (_) => ZipnetFilterDialog(
         initialFilters: udb.filters,
         onApply: (f) => udb.setFilters(f),
         onReset: () => udb.resetFilters(),
       ),
+    );
+  }
+
+  void _openSearchDialog(BuildContext context, UdbProvider udb) {
+    showDialog(
+      context: context,
+      builder: (_) => ZipnetSearchDialog(
+        initialFilters: udb.filters,
+        onApply: (f) => udb.setFilters(f),
+        onReset: () => udb.resetFilters(),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final udb = context.watch<UdbProvider>();
+    final loc = context.watch<LocaleProvider>();
+    final isDesktop = Responsive.isDesktop(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final records = udb.filteredRecords;
+
+    return Scaffold(
+      backgroundColor: Colors.transparent,
       body: SingleChildScrollView(
         padding: EdgeInsets.symmetric(
-          horizontal: isDesktop ? 48 : 16,
-          vertical: 24,
+          horizontal: isDesktop ? 32 : 12,
+          vertical: 16,
         ),
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1280),
+            constraints: const BoxConstraints(maxWidth: 1360),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Hero Banner
-                _buildHeroBanner(isDesktop, udb),
+                // 1. UDBMS Breadcrumbs Navigation
+                _buildBreadcrumbs(isDark, loc),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 12),
 
-                // KPI Metrics Strip
-                _buildKpiGrid(isDesktop, udb),
-
-                const SizedBox(height: 28),
-
-                // Search Bar & Filter Controls
-                _buildSearchToolbar(context, isDesktop, udb),
+                // 2. UDBMS Section Header with [ Filter ] and [ Search ] Action Buttons
+                _buildUdbmsPageHeader(context, isDark, isDesktop, udb, loc),
 
                 const SizedBox(height: 16),
 
-                // Active Filter Chips Strip
+                // 3. Search Bar & Quick Forensic Presets Toolbar
+                _buildUdbmsControlsBar(context, isDark, isDesktop, udb, loc),
+
+                const SizedBox(height: 12),
+
+                // 4. Active Filters Summary Ribbon (if any active filter)
                 if (!udb.filters.isEmpty)
-                  _buildActiveFilterChips(udb),
+                  _buildActiveFilterChips(udb, loc),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 14),
 
-                // Results Toolbar
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).brightness == Brightness.light ? Colors.white : AppColors.darkCardBg,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: Theme.of(context).brightness == Brightness.light ? AppColors.lightBorder : AppColors.darkBorder,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: RichText(
-                          text: TextSpan(
-                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
-                            children: [
-                              const TextSpan(text: 'Showing '),
-                              TextSpan(
-                                text: '${records.length}',
-                                style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
-                              ),
-                              TextSpan(text: ' of ${udb.totalRecords} verified deceased cases'),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      // Sort Selector
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.sort_rounded, size: 16, color: AppColors.slate500),
-                          const SizedBox(width: 6),
-                          DropdownButton<UdbSortOption>(
-                            value: udb.filters.sortOption,
-                            underline: const SizedBox(),
-                            icon: const Icon(Icons.arrow_drop_down, size: 18),
-                            style: TextStyle(
-                              color: Theme.of(context).brightness == Brightness.light ? AppColors.slate800 : Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            items: UdbSortOption.values.map((s) {
-                              return DropdownMenuItem(
-                                value: s,
-                                child: Text(s.label),
-                              );
-                            }).toList(),
-                            onChanged: (s) {
-                              if (s != null) udb.updateSort(s);
-                            },
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(width: 14),
-
-                      // View Mode Toggle (Grid vs Table)
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).brightness == Brightness.light ? AppColors.slate100 : AppColors.darkSurface,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: Theme.of(context).brightness == Brightness.light ? AppColors.slate200 : AppColors.darkBorder,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: Icon(
-                                Icons.grid_view_rounded,
-                                size: 16,
-                                color: !_isTableView ? AppColors.primary : AppColors.slate500,
-                              ),
-                              tooltip: 'Visual Grid Cards View',
-                              padding: const EdgeInsets.all(6),
-                              constraints: const BoxConstraints(),
-                              onPressed: () => setState(() => _isTableView = false),
-                            ),
-                            Container(width: 1, height: 16, color: AppColors.slate300),
-                            IconButton(
-                              icon: Icon(
-                                Icons.table_chart_outlined,
-                                size: 16,
-                                color: _isTableView ? AppColors.primary : AppColors.slate500,
-                              ),
-                              tooltip: 'Forensic Comparison Table View',
-                              padding: const EdgeInsets.all(6),
-                              constraints: const BoxConstraints(),
-                              onPressed: () => setState(() => _isTableView = true),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Records Grid or Table View
+                // 5. Main Records Display (Table view or Grid view)
                 if (records.isNotEmpty)
                   _isTableView
                       ? ForensicTableView(
@@ -195,8 +110,11 @@ class _PublicHomeViewState extends State<PublicHomeView> {
                         )
                       : _buildRecordGrid(isDesktop, records, udb.blurSensitive)
                 else
-                  _buildEmptyState(udb),
+                  _buildEmptyState(udb, loc),
+
                 const SizedBox(height: 48),
+
+                // 6. Official UDBMS Footer
                 const AppFooter(),
               ],
             ),
@@ -206,304 +124,387 @@ class _PublicHomeViewState extends State<PublicHomeView> {
     );
   }
 
-  Widget _buildHeroBanner(bool isDesktop, UdbProvider udb) {
-    final isLight = Theme.of(context).brightness == Brightness.light;
-    final cardBg = isLight ? Colors.white : AppColors.darkCardBg;
-    final borderColor = isLight ? AppColors.lightBorder : AppColors.darkBorder;
-    final titleColor = isLight ? AppColors.slate900 : Colors.white;
-    final subtitleColor = isLight ? AppColors.slate600 : AppColors.darkTextSecondary;
+  // 1. Breadcrumbs Strip
+  Widget _buildBreadcrumbs(bool isDark, LocaleProvider loc) {
+    final textStyle = TextStyle(
+      color: isDark ? AppColors.darkTextMuted : AppColors.slate500,
+      fontSize: 11.5,
+    );
+    final activeStyle = TextStyle(
+      color: isDark ? AppColors.goldBright : const Color(0xFF0F2646),
+      fontSize: 11.5,
+      fontWeight: FontWeight.bold,
+    );
+
+    return Row(
+      children: [
+        Icon(Icons.home, size: 14, color: textStyle.color),
+        const SizedBox(width: 4),
+        Text(loc.tr('Home', 'হোম'), style: textStyle),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 6),
+          child: Icon(Icons.chevron_right, size: 14, color: AppColors.slate400),
+        ),
+        Text(loc.tr('Victims', 'ভিকটিমস'), style: textStyle),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 6),
+          child: Icon(Icons.chevron_right, size: 14, color: AppColors.slate400),
+        ),
+        Text(
+          loc.tr(
+            'Un-Identified Dead Bodies (অজ্ঞাত মৃতদেহ)',
+            'অজ্ঞাত মৃতদেহ রেজিস্ট্রি (UIDB)',
+          ),
+          style: activeStyle,
+        ),
+      ],
+    );
+  }
+
+  // 2. UDBMS Header with prominent [ Filter ] & [ Search ] Buttons
+  Widget _buildUdbmsPageHeader(
+    BuildContext context,
+    bool isDark,
+    bool isDesktop,
+    UdbProvider udb,
+    LocaleProvider loc,
+  ) {
+    final cardBg = isDark ? AppColors.darkCardBg : Colors.white;
+    final borderColor = isDark ? AppColors.darkBorder : const Color(0xFFCBD5E1);
 
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isDesktop ? 24 : 16,
-        vertical: isDesktop ? 18 : 14,
+        horizontal: isDesktop ? 22 : 14,
+        vertical: 14,
       ),
       decoration: BoxDecoration(
         color: cardBg,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: borderColor, width: 1),
-        boxShadow: isLight
-            ? const [
-                BoxShadow(
-                  color: Color(0x060F172A),
-                  blurRadius: 12,
-                  offset: Offset(0, 3),
-                ),
-              ]
-            : null,
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: AppColors.goldLight,
-                        borderRadius: BorderRadius.circular(5),
-                        border: Border.all(color: AppColors.goldBorder),
-                      ),
-                      child: const Text(
-                        'CENTRAL INTELLIGENCE BUREAU (CIB)',
-                        style: TextStyle(color: AppColors.goldDark, fontSize: 9.5, fontWeight: FontWeight.bold, letterSpacing: 0.6),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: AppColors.greenLight,
-                        borderRadius: BorderRadius.circular(5),
-                        border: Border.all(color: AppColors.greenBorder),
-                      ),
-                      child: const Text(
-                        'NATIONAL DNA & AFIS DATABASE',
-                        style: TextStyle(color: AppColors.green, fontSize: 9.5, fontWeight: FontWeight.bold, letterSpacing: 0.6),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Unidentified Deceased Management & Forensic Cross-Matching System',
-                  style: TextStyle(
-                    color: titleColor,
-                    fontWeight: FontWeight.w900,
-                    fontSize: isDesktop ? 21 : 17,
-                    height: 1.2,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Centralized biometric & anthropological portal by CID Bangladesh Police across all 64 districts. Search unidentified deceased cases using scars, tattoos, physical characteristics, and recovered clothing.',
-                  style: TextStyle(color: subtitleColor, fontSize: 12, height: 1.4),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 14),
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 8,
-                  children: [
-                    ElevatedButton.icon(
-                      onPressed: widget.onReportFoundBody,
-                      icon: const Icon(Icons.report_problem_rounded, size: 14),
-                      label: const Text('Report Found Body (Emergency)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.red,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: widget.onRequestIoAccess,
-                      icon: const Icon(Icons.vpn_key_outlined, size: 14),
-                      label: const Text('Police Officer (IO) Access Request', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: isLight ? AppColors.slate800 : Colors.white,
-                        side: BorderSide(color: isLight ? AppColors.slate300 : AppColors.darkBorder),
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          if (isDesktop) ...[
-            const SizedBox(width: 24),
-            Image.asset(
-              'assets/images/cid-logo-blue.png',
-              height: 95,
-              errorBuilder: (_, _, _) => Image.asset(
-                'assets/images/CID.png',
-                height: 95,
-                errorBuilder: (_, _, _) => const Icon(Icons.shield_outlined, color: AppColors.primary, size: 80),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildKpiGrid(bool isDesktop, UdbProvider udb) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final double width = constraints.maxWidth;
-        final int crossAxisCount = width > 1000
-            ? 5
-            : width > 700
-                ? 3
-                : 2;
-
-        // Fixed row height: KPI cards stay the same size on every screen width.
-        return GridView(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: crossAxisCount,
-            mainAxisSpacing: 10,
-            crossAxisSpacing: 10,
-            mainAxisExtent: 76,
-          ),
-          children: [
-            KpiCard(
-              title: 'CIB Database Index',
-              count: '${udb.totalRecords}',
-              subtitle: 'Total Deceased Records',
-              icon: Icons.folder_open_outlined,
-              accentColor: AppColors.blue,
-            ),
-            KpiCard(
-              title: 'Recent Recoveries',
-              count: '${udb.recentRecoveriesCount}',
-              subtitle: 'Active cases in system',
-              icon: Icons.access_time_outlined,
-              accentColor: AppColors.gold,
-            ),
-            KpiCard(
-              title: 'Biometric AFIS',
-              count: '${udb.afisAvailableCount}',
-              subtitle: 'Fingerprints collected',
-              icon: Icons.fingerprint,
-              accentColor: AppColors.cyan,
-            ),
-            KpiCard(
-              title: 'DNA Profiling',
-              count: '${udb.dnaAvailableCount}',
-              subtitle: 'DNA profiles archived',
-              icon: Icons.biotech_outlined,
-              accentColor: AppColors.purple,
-            ),
-            KpiCard(
-              title: 'Active Verification',
-              count: '${udb.activeMatchingCount}',
-              subtitle: 'Under cross-matching',
-              icon: Icons.compare_arrows_outlined,
-              accentColor: AppColors.green,
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildSearchToolbar(BuildContext context, bool isDesktop, UdbProvider udb) {
-    final isLight = Theme.of(context).brightness == Brightness.light;
-    final cardBg = isLight ? Colors.white : AppColors.darkCardBg;
-    final borderColor = isLight ? AppColors.lightBorder : AppColors.darkBorder;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(color: borderColor),
-        boxShadow: isLight
-            ? [
+        boxShadow: isDark
+            ? null
+            : [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.03),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
-                )
-              ]
-            : null,
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.search, color: AppColors.gold),
-                    hintText: 'Search by case/GD ref, visible marks, tattoos, scars, clothing, thana, location...',
-                    suffixIcon: _searchController.text.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear, size: 18),
-                            onPressed: () {
-                              _searchController.clear();
-                              udb.updateKeywords('');
-                            },
-                          )
-                        : null,
-                  ),
-                  onChanged: (val) => udb.updateKeywords(val),
                 ),
+              ],
+      ),
+      child: Wrap(
+        spacing: 16,
+        runSpacing: 12,
+        alignment: WrapAlignment.spaceBetween,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          // Title & Subtitle
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                runSpacing: 4,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 4,
+                        height: 22,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0F2646),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        loc.tr('Un-Identified Dead Bodies', 'অজ্ঞাত মৃতদেহ রেজিস্ট্রি'),
+                        style: const TextStyle(
+                          color: Color(0xFF0F2646),
+                          fontSize: 19,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.5,
+                          fontFamily: 'serif',
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E3A8A).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: const Color(0xFF1E3A8A).withValues(alpha: 0.3)),
+                    ),
+                    child: Text(
+                      loc.tr(
+                        'Total: ${udb.totalRecords} Records',
+                        'মোট: ${udb.totalRecords}টি মরদেহ',
+                      ),
+                      style: const TextStyle(
+                        color: Color(0xFF1E3A8A),
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 12),
-              ElevatedButton.icon(
-                onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
-                icon: const Icon(Icons.tune, size: 16),
-                label: Text(isDesktop ? 'Filter Parameters' : 'Filters'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              const SizedBox(height: 4),
+              Padding(
+                padding: const EdgeInsets.only(left: 12),
+                child: Text(
+                  loc.tr(
+                    'Inter-District Central Biometric & Inquest Database • PRB Rule 299-303 & CrPC §174 • CID Bangladesh Police',
+                    'বেঙ্গল পুলিশ রেগুলেশন (পিআরবি নিয়ম ২৯৯-৩০৩) ও সিআরপিসি ১৭৪ ধারা • সিআইডি কেন্দ্রীয় ডাটাবেজ',
+                  ),
+                  style: TextStyle(
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.slate600,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ],
           ),
 
-          const SizedBox(height: 12),
+          // Action Buttons: [ Filter ] and [ Search ] + View Mode
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // [ Filter ] Button (UDBMS Navy Blue Button)
+              ElevatedButton.icon(
+                onPressed: () => _openFilterDialog(context, udb),
+                icon: const Icon(Icons.tune_rounded, size: 15),
+                label: Text(
+                  loc.tr('Filter', 'ফিল্টার'),
+                  style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, letterSpacing: 0.3),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0F2646),
+                  foregroundColor: Colors.white,
+                  elevation: 1,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                ),
+              ),
 
-          // Quick Filter Shortcuts & Presets Bar
+              const SizedBox(width: 10),
+
+              // [ Search ] Button (UDBMS Amber / Orange Button)
+              ElevatedButton.icon(
+                onPressed: () => _openSearchDialog(context, udb),
+                icon: const Icon(Icons.manage_search_rounded, size: 16),
+                label: Text(
+                  loc.tr('Search', 'অনুসন্ধান'),
+                  style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, letterSpacing: 0.3),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFD97706),
+                  foregroundColor: Colors.white,
+                  elevation: 1,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                ),
+              ),
+
+              const SizedBox(width: 14),
+
+              // View Mode Toggle (Table / Grid)
+              Container(
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.darkSurface : const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: isDark ? AppColors.darkBorder : const Color(0xFFCBD5E1),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: Icon(
+                        Icons.table_rows_rounded,
+                        size: 16,
+                        color: _isTableView ? const Color(0xFF0F2646) : AppColors.slate400,
+                      ),
+                      tooltip: loc.tr('Table View (UDBMS Default)', 'টেবিল ভিউ'),
+                      padding: const EdgeInsets.all(6),
+                      constraints: const BoxConstraints(),
+                      onPressed: () => setState(() => _isTableView = true),
+                    ),
+                    Container(width: 1, height: 16, color: const Color(0xFFCBD5E1)),
+                    IconButton(
+                      icon: Icon(
+                        Icons.grid_view_rounded,
+                        size: 16,
+                        color: !_isTableView ? const Color(0xFF0F2646) : AppColors.slate400,
+                      ),
+                      tooltip: loc.tr('Card Grid View', 'কার্ড গ্রিড ভিউ'),
+                      padding: const EdgeInsets.all(6),
+                      constraints: const BoxConstraints(),
+                      onPressed: () => setState(() => _isTableView = false),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 3. Quick Search Bar & Forensic Presets Toolbar
+  Widget _buildUdbmsControlsBar(
+    BuildContext context,
+    bool isDark,
+    bool isDesktop,
+    UdbProvider udb,
+    LocaleProvider loc,
+  ) {
+    final cardBg = isDark ? AppColors.darkCardBg : Colors.white;
+    final borderColor = isDark ? AppColors.darkBorder : const Color(0xFFCBD5E1);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: borderColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Instant Search Input
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 38,
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (val) => udb.updateKeywords(val),
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      color: isDark ? Colors.white : AppColors.slate900,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: loc.tr(
+                        'Search by case no, GD ref, thana, district, marks, clothing, scars, tattoos...',
+                        'জিডি নং, থানা, জেলা, পোশাক, বিশেষ তিল, জন্মদাগ, ট্যাটু বা ক্ষতচিহ্ন দিয়ে অনুসন্ধান...',
+                      ),
+                      hintStyle: TextStyle(
+                        fontSize: 12,
+                        color: isDark ? AppColors.darkTextMuted : AppColors.slate400,
+                      ),
+                      prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF0F2646)),
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.close, size: 16),
+                              onPressed: () {
+                                _searchController.clear();
+                                udb.updateKeywords('');
+                              },
+                            )
+                          : null,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      filled: true,
+                      fillColor: isDark ? AppColors.darkInputBg : const Color(0xFFF8FAFC),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(6),
+                        borderSide: BorderSide(color: isDark ? AppColors.darkBorder : const Color(0xFFCBD5E1)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(6),
+                        borderSide: BorderSide(color: isDark ? AppColors.darkBorder : const Color(0xFFCBD5E1)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(6),
+                        borderSide: const BorderSide(color: Color(0xFF0F2646), width: 1.5),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              // Reset All Filters Button
+              TextButton.icon(
+                onPressed: () {
+                  _searchController.clear();
+                  udb.resetFilters();
+                },
+                icon: const Icon(Icons.refresh_rounded, size: 15, color: AppColors.slate600),
+                label: Text(
+                  loc.tr('Reset', 'রিসেট'),
+                  style: const TextStyle(color: AppColors.slate600, fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(6),
+                    side: BorderSide(color: isDark ? AppColors.darkBorder : const Color(0xFFCBD5E1)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 10),
+
+          // Quick Presets Row
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                const Icon(Icons.flash_on, size: 14, color: AppColors.gold),
-                const SizedBox(width: 4),
-                const Text('Forensic Presets: ', style: TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.bold)),
+                Text(
+                  loc.tr('Quick Filters: ', 'দ্রুত ফিল্টার: '),
+                  style: const TextStyle(
+                    color: Color(0xFF0F2646),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
                 _quickFilterChip(
-                  label: 'All Cases (${udb.totalRecords})',
+                  label: loc.tr('All (${udb.totalRecords})', 'সকল (${udb.totalRecords})'),
                   isSelected: udb.filters.quickPreset == null || udb.filters.quickPreset == 'all',
                   onTap: () => udb.updateQuickPreset('all'),
                 ),
                 _quickFilterChip(
-                  label: 'DNA Archived (${udb.dnaAvailableCount})',
+                  label: loc.tr('DNA Archived (${udb.dnaAvailableCount})', 'ডিএনএ প্রোফাইল (${udb.dnaAvailableCount})'),
                   isSelected: udb.filters.quickPreset == 'withDna',
                   onTap: () => udb.updateQuickPreset(udb.filters.quickPreset == 'withDna' ? 'all' : 'withDna'),
                 ),
                 _quickFilterChip(
-                  label: 'AFIS 10-Print (${udb.afisAvailableCount})',
+                  label: loc.tr('AFIS Fingerprints (${udb.afisAvailableCount})', 'আঙ্গুলের ছাপ AFIS (${udb.afisAvailableCount})'),
                   isSelected: udb.filters.quickPreset == 'withAfis',
                   onTap: () => udb.updateQuickPreset(udb.filters.quickPreset == 'withAfis' ? 'all' : 'withAfis'),
                 ),
                 _quickFilterChip(
-                  label: 'Water Immersed / Floaters',
+                  label: loc.tr('Water Floater', 'পানিতে ভাসমান মরদেহ'),
                   isSelected: udb.filters.quickPreset == 'floater',
                   onTap: () => udb.updateQuickPreset(udb.filters.quickPreset == 'floater' ? 'all' : 'floater'),
                 ),
                 _quickFilterChip(
-                  label: 'Skeletal / Decomposed',
+                  label: loc.tr('Skeletal / Decomposed', 'কঙ্কালসার / অর্ধগলিত'),
                   isSelected: udb.filters.quickPreset == 'skeletal',
                   onTap: () => udb.updateQuickPreset(udb.filters.quickPreset == 'skeletal' ? 'all' : 'skeletal'),
                 ),
-                const SizedBox(width: 14),
-                const Text('Sex: ', style: TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.bold)),
+                const SizedBox(width: 8),
+                Text('|  ${loc.tr('Sex: ', 'লিঙ্গ: ')}', style: const TextStyle(color: AppColors.slate400, fontSize: 11)),
                 _quickFilterChip(
-                  label: 'Male',
+                  label: loc.tr('Male', 'পুরুষ'),
                   isSelected: udb.filters.gender == 'Male',
-                  onTap: () => udb.setFilters(_cloneFilter(udb.filters, gender: udb.filters.gender == 'Male' ? '' : 'Male')),
+                  onTap: () => udb.setFilters(udb.filters.copyWith(gender: udb.filters.gender == 'Male' ? '' : 'Male')),
                 ),
                 _quickFilterChip(
-                  label: 'Female',
+                  label: loc.tr('Female', 'নারী'),
                   isSelected: udb.filters.gender == 'Female',
-                  onTap: () => udb.setFilters(_cloneFilter(udb.filters, gender: udb.filters.gender == 'Female' ? '' : 'Female')),
+                  onTap: () => udb.setFilters(udb.filters.copyWith(gender: udb.filters.gender == 'Female' ? '' : 'Female')),
                 ),
               ],
             ),
@@ -518,86 +519,118 @@ class _PublicHomeViewState extends State<PublicHomeView> {
     required bool isSelected,
     required VoidCallback onTap,
   }) {
-    final isLight = Theme.of(context).brightness == Brightness.light;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final fg = isSelected
-        ? AppColors.primary
-        : (isLight ? AppColors.slate700 : AppColors.darkTextSecondary);
+        ? Colors.white
+        : (isDark ? AppColors.darkTextSecondary : const Color(0xFF0F2646));
     final bg = isSelected
-        ? AppColors.primaryLight
-        : (isLight ? AppColors.slate100 : AppColors.darkInputBg);
+        ? const Color(0xFF0F2646)
+        : (isDark ? AppColors.darkInputBg : const Color(0xFFF1F5F9));
     final border = isSelected
-        ? AppColors.primaryBorder
-        : (isLight ? AppColors.slate200 : AppColors.darkBorder);
+        ? const Color(0xFF0F2646)
+        : (isDark ? AppColors.darkBorder : const Color(0xFFCBD5E1));
 
     return Padding(
       padding: const EdgeInsets.only(right: 6),
-      child: ChoiceChip(
-        label: Text(label, style: TextStyle(fontSize: 11, fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500, color: fg)),
-        selected: isSelected,
-        selectedColor: bg,
-        backgroundColor: bg,
-        side: BorderSide(color: border),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        onSelected: (_) => onTap(),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(4),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: border),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(fontSize: 10.5, fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600, color: fg),
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildActiveFilterChips(UdbProvider udb) {
+  // 4. Active Filters Summary Ribbon
+  Widget _buildActiveFilterChips(UdbProvider udb, LocaleProvider loc) {
     final f = udb.filters;
-    final isLight = Theme.of(context).brightness == Brightness.light;
-    return Wrap(
-      spacing: 8,
-      runSpacing: 6,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      children: [
-        Text(
-          'Active Filters: ',
-          style: TextStyle(
-            color: isLight ? AppColors.slate700 : AppColors.darkTextSecondary,
-            fontSize: 11,
-            fontWeight: FontWeight.bold,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFBEB),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: const Color(0xFFFDE68A)),
+      ),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 6,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.filter_alt, size: 14, color: Color(0xFFB45309)),
+              const SizedBox(width: 4),
+              Text(
+                loc.tr('Active Filters: ', 'সক্রিয় ফিল্টারসমূহ: '),
+                style: const TextStyle(
+                  color: Color(0xFFB45309),
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
-        ),
-        if (f.quickPreset != null && f.quickPreset != 'all')
-          _chip('Preset: ${f.quickPreset}', () => udb.updateQuickPreset('all')),
-        if (f.keywords != null && f.keywords!.isNotEmpty)
-          _chip('Keyword: "${f.keywords}"', () => udb.updateKeywords('')),
-        if (f.gender != null && f.gender!.isNotEmpty)
-          _chip('Sex: ${f.gender}', () => udb.setFilters(_cloneFilter(f, gender: ''))),
-        if (f.ageGroup != null && f.ageGroup!.isNotEmpty)
-          _chip('Age: ${f.ageGroup}', () => udb.setFilters(_cloneFilter(f, ageGroup: ''))),
-        if (f.division != null && f.division!.isNotEmpty)
-          _chip('Division: ${f.division}', () => udb.setFilters(_cloneFilter(f, division: ''))),
-        if (f.district != null && f.district!.isNotEmpty)
-          _chip('District: ${f.district}', () => udb.setFilters(_cloneFilter(f, district: ''))),
-        if (f.thana != null && f.thana!.isNotEmpty)
-          _chip('Thana: ${f.thana}', () => udb.setFilters(_cloneFilter(f, thana: ''))),
-        if (f.status != null && f.status!.isNotEmpty)
-          _chip('Status: ${f.status}', () => udb.setFilters(_cloneFilter(f, status: ''))),
-        if (f.hasFingerprint == true)
-          _chip('AFIS Fingerprint', () => udb.setFilters(_cloneFilter(f, hasFingerprint: null))),
-        if (f.hasDna == true)
-          _chip('DNA Profile', () => udb.setFilters(_cloneFilter(f, hasDna: null))),
-        TextButton(
-          onPressed: () => udb.resetFilters(),
-          child: const Text('Clear All', style: TextStyle(color: AppColors.red, fontSize: 11, fontWeight: FontWeight.bold)),
-        ),
-      ],
+          if (f.quickPreset != null && f.quickPreset != 'all')
+            _chip('Preset: ${f.quickPreset}', () => udb.updateQuickPreset('all')),
+          if (f.keywords != null && f.keywords!.isNotEmpty)
+            _chip('Keyword: "${f.keywords}"', () => udb.updateKeywords('')),
+          if (f.gender != null && f.gender!.isNotEmpty)
+            _chip('Sex: ${f.gender}', () => udb.setFilters(f.copyWith(gender: ''))),
+          if (f.division != null && f.division!.isNotEmpty)
+            _chip('Division: ${f.division}', () => udb.setFilters(f.copyWith(division: ''))),
+          if (f.district != null && f.district!.isNotEmpty)
+            _chip('District: ${f.district}', () => udb.setFilters(f.copyWith(district: ''))),
+          if (f.thana != null && f.thana!.isNotEmpty)
+            _chip('Thana: ${f.thana}', () => udb.setFilters(f.copyWith(thana: ''))),
+          if (f.minAge != null || f.maxAge != null)
+            _chip('Age: ${f.minAge ?? 0}-${f.maxAge ?? 100}y', () => udb.setFilters(f.copyWith(minAge: null, maxAge: null))),
+          if (f.minHeight != null || f.maxHeight != null)
+            _chip('Height: ${f.minHeight ?? 0}-${f.maxHeight ?? 220}cm', () => udb.setFilters(f.copyWith(minHeight: null, maxHeight: null))),
+          if (f.complexion != null && f.complexion!.isNotEmpty)
+            _chip('Complexion: ${f.complexion}', () => udb.setFilters(f.copyWith(complexion: ''))),
+          if (f.clothingKeyword != null && f.clothingKeyword!.isNotEmpty)
+            _chip('Clothing: ${f.clothingKeyword}', () => udb.setFilters(f.copyWith(clothingKeyword: ''))),
+          if (f.hasPhotosOnly == true)
+            _chip(loc.tr('With Photos Only', 'শুধুমাত্র ছবিযুক্ত'), () => udb.setFilters(f.copyWith(hasPhotosOnly: false))),
+          if (f.dateFrom != null || f.dateTo != null)
+            _chip('Found Date: ${f.dateFrom ?? "Start"} to ${f.dateTo ?? "End"}', () => udb.setFilters(f.copyWith(dateFrom: '', dateTo: ''))),
+          TextButton(
+            onPressed: () => udb.resetFilters(),
+            child: Text(
+              loc.tr('Clear All Filters', 'সকল ফিল্টার মুছুন'),
+              style: const TextStyle(color: AppColors.redDark, fontSize: 11, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _chip(String label, VoidCallback onRemove) {
     return Chip(
-      label: Text(label, style: const TextStyle(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.w600)),
-      backgroundColor: AppColors.primaryLight,
-      side: const BorderSide(color: AppColors.primaryBorder),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-      deleteIcon: const Icon(Icons.close, size: 14, color: AppColors.primary),
+      label: Text(label, style: const TextStyle(fontSize: 10.5, color: Color(0xFF0F2646), fontWeight: FontWeight.w600)),
+      backgroundColor: Colors.white,
+      side: const BorderSide(color: Color(0xFFCBD5E1)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+      deleteIcon: const Icon(Icons.close, size: 13, color: Color(0xFF0F2646)),
       onDeleted: onRemove,
+      visualDensity: VisualDensity.compact,
+      padding: const EdgeInsets.symmetric(horizontal: 4),
     );
   }
 
+  // 5. Grid View (Fallback if user toggles view)
   Widget _buildRecordGrid(bool isDesktop, List<UdbRecord> records, bool blurSensitive) {
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -605,10 +638,10 @@ class _PublicHomeViewState extends State<PublicHomeView> {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 390,
+            maxCrossAxisExtent: 380,
             crossAxisSpacing: 14,
             mainAxisSpacing: 14,
-            mainAxisExtent: 418,
+            mainAxisExtent: 410,
           ),
           itemCount: records.length,
           itemBuilder: (context, index) {
@@ -624,85 +657,53 @@ class _PublicHomeViewState extends State<PublicHomeView> {
     );
   }
 
-  Widget _buildEmptyState(UdbProvider udb) {
-    final isLight = Theme.of(context).brightness == Brightness.light;
-    final cardBg = isLight ? Colors.white : AppColors.darkCardBg;
-    final borderColor = isLight ? AppColors.lightBorder : AppColors.darkBorder;
-    final titleColor = isLight ? AppColors.slate900 : Colors.white;
-    final descColor = isLight ? AppColors.slate600 : AppColors.darkTextSecondary;
+  // Empty State
+  Widget _buildEmptyState(UdbProvider udb, LocaleProvider loc) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark ? AppColors.darkCardBg : Colors.white;
+    final borderColor = isDark ? AppColors.darkBorder : const Color(0xFFCBD5E1);
 
     return Container(
       padding: const EdgeInsets.all(48),
       decoration: BoxDecoration(
         color: cardBg,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(color: borderColor),
-        boxShadow: isLight
-            ? const [
-                BoxShadow(
-                  color: Color(0x060F172A),
-                  blurRadius: 12,
-                  offset: Offset(0, 3),
-                ),
-              ]
-            : null,
       ),
       child: Center(
         child: Column(
           children: [
-            const Icon(Icons.search_off, size: 52, color: AppColors.slate400),
-            const SizedBox(height: 16),
+            const Icon(Icons.search_off_rounded, size: 52, color: AppColors.slate400),
+            const SizedBox(height: 14),
             Text(
-              'No Matching Deceased Records Found',
-              style: TextStyle(color: titleColor, fontWeight: FontWeight.bold, fontSize: 18),
+              loc.tr(
+                'No Matching Deceased Records Found in UDBMS Registry',
+                'ইউডিবিএমএস রেজিস্ট্রিতে কোনো মিল পাওয়া যায়নি',
+              ),
+              style: const TextStyle(color: Color(0xFF0F2646), fontWeight: FontWeight.bold, fontSize: 16),
             ),
             const SizedBox(height: 8),
             Text(
-              'Try widening your age parameters, selecting all divisions, or clearing specific keyword filters.',
-              style: TextStyle(color: descColor, fontSize: 13),
+              loc.tr(
+                'Try clearing some filter criteria, broadening the age/height range, or searching for fewer keywords.',
+                'অনুসন্ধানের পরিধি বাড়াতে ফিল্টার অপশনগুলো রিসেট করুন অথবা বয়স ও উচ্চতার সীমা প্রসারিত করুন।',
+              ),
+              style: const TextStyle(color: AppColors.slate600, fontSize: 12.5),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 18),
             ElevatedButton(
               onPressed: () => udb.resetFilters(),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
+                backgroundColor: const Color(0xFF0F2646),
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
               ),
-              child: const Text('Reset All Filters'),
+              child: Text(loc.tr('Reset All Filters', 'সকল ফিল্টার রিসেট করুন')),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  UdbFilterParams _cloneFilter(
-    UdbFilterParams orig, {
-    String? gender,
-    String? ageGroup,
-    String? division,
-    String? district,
-    String? thana,
-    String? status,
-    bool? hasFingerprint,
-    bool? hasDna,
-    String? quickPreset,
-    UdbSortOption? sortOption,
-  }) {
-    return UdbFilterParams(
-      keywords: orig.keywords,
-      gender: gender ?? orig.gender,
-      ageGroup: ageGroup ?? orig.ageGroup,
-      division: division ?? orig.division,
-      district: district ?? orig.district,
-      thana: thana ?? orig.thana,
-      status: status ?? orig.status,
-      hasFingerprint: hasFingerprint ?? orig.hasFingerprint,
-      hasDna: hasDna ?? orig.hasDna,
-      quickPreset: quickPreset ?? orig.quickPreset,
-      sortOption: sortOption ?? orig.sortOption,
     );
   }
 }

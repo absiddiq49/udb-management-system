@@ -36,6 +36,15 @@ class UdbFilterParams {
   final String? keywords;
   final String? gender;
   final String? ageGroup;
+  final int? minAge;
+  final int? maxAge;
+  final int? minHeight;
+  final int? maxHeight;
+  final String? complexion;
+  final String? clothingKeyword;
+  final bool? hasPhotosOnly;
+  final String? dateFrom;
+  final String? dateTo;
   final String? division;
   final String? district;
   final String? thana;
@@ -49,6 +58,15 @@ class UdbFilterParams {
     this.keywords,
     this.gender,
     this.ageGroup,
+    this.minAge,
+    this.maxAge,
+    this.minHeight,
+    this.maxHeight,
+    this.complexion,
+    this.clothingKeyword,
+    this.hasPhotosOnly,
+    this.dateFrom,
+    this.dateTo,
     this.division,
     this.district,
     this.thana,
@@ -59,10 +77,65 @@ class UdbFilterParams {
     this.sortOption = UdbSortOption.dateDesc,
   });
 
+  UdbFilterParams copyWith({
+    String? keywords,
+    String? gender,
+    String? ageGroup,
+    int? minAge,
+    int? maxAge,
+    int? minHeight,
+    int? maxHeight,
+    String? complexion,
+    String? clothingKeyword,
+    bool? hasPhotosOnly,
+    String? dateFrom,
+    String? dateTo,
+    String? division,
+    String? district,
+    String? thana,
+    String? status,
+    bool? hasFingerprint,
+    bool? hasDna,
+    String? quickPreset,
+    UdbSortOption? sortOption,
+  }) {
+    return UdbFilterParams(
+      keywords: keywords ?? this.keywords,
+      gender: gender ?? this.gender,
+      ageGroup: ageGroup ?? this.ageGroup,
+      minAge: minAge ?? this.minAge,
+      maxAge: maxAge ?? this.maxAge,
+      minHeight: minHeight ?? this.minHeight,
+      maxHeight: maxHeight ?? this.maxHeight,
+      complexion: complexion ?? this.complexion,
+      clothingKeyword: clothingKeyword ?? this.clothingKeyword,
+      hasPhotosOnly: hasPhotosOnly ?? this.hasPhotosOnly,
+      dateFrom: dateFrom ?? this.dateFrom,
+      dateTo: dateTo ?? this.dateTo,
+      division: division ?? this.division,
+      district: district ?? this.district,
+      thana: thana ?? this.thana,
+      status: status ?? this.status,
+      hasFingerprint: hasFingerprint ?? this.hasFingerprint,
+      hasDna: hasDna ?? this.hasDna,
+      quickPreset: quickPreset ?? this.quickPreset,
+      sortOption: sortOption ?? this.sortOption,
+    );
+  }
+
   bool get isEmpty =>
       (keywords == null || keywords!.trim().isEmpty) &&
       (gender == null || gender!.isEmpty) &&
       (ageGroup == null || ageGroup!.isEmpty) &&
+      minAge == null &&
+      maxAge == null &&
+      minHeight == null &&
+      maxHeight == null &&
+      (complexion == null || complexion!.isEmpty) &&
+      (clothingKeyword == null || clothingKeyword!.trim().isEmpty) &&
+      hasPhotosOnly != true &&
+      (dateFrom == null || dateFrom!.isEmpty) &&
+      (dateTo == null || dateTo!.isEmpty) &&
       (division == null || division!.isEmpty) &&
       (district == null || district!.isEmpty) &&
       (thana == null || thana!.isEmpty) &&
@@ -127,6 +200,55 @@ class UdbRepository {
 
       if (filters.hasDna == true && !record.hasDna) {
         return false;
+      }
+
+      // ZIPNET Age & Height Ranges
+      if (filters.minAge != null && record.estimatedAge < filters.minAge!) {
+        return false;
+      }
+
+      if (filters.maxAge != null && record.estimatedAge > filters.maxAge!) {
+        return false;
+      }
+
+      if (filters.minHeight != null && record.heightCm < filters.minHeight!) {
+        return false;
+      }
+
+      if (filters.maxHeight != null && record.heightCm > filters.maxHeight!) {
+        return false;
+      }
+
+      // Complexion & Clothing
+      if (filters.complexion != null && filters.complexion!.isNotEmpty) {
+        if (!record.complexion.toLowerCase().contains(filters.complexion!.toLowerCase())) {
+          return false;
+        }
+      }
+
+      if (filters.clothingKeyword != null && filters.clothingKeyword!.trim().isNotEmpty) {
+        final c = filters.clothingKeyword!.trim().toLowerCase();
+        if (!record.clothing.toLowerCase().contains(c) && !record.personalBelongings.toLowerCase().contains(c)) {
+          return false;
+        }
+      }
+
+      // Images filter (ZIPNET "Select Images")
+      if (filters.hasPhotosOnly == true && record.photos.isEmpty) {
+        return false;
+      }
+
+      // Found Date Range
+      if (filters.dateFrom != null && filters.dateFrom!.isNotEmpty) {
+        if (record.dateFound.compareTo(filters.dateFrom!) < 0) {
+          return false;
+        }
+      }
+
+      if (filters.dateTo != null && filters.dateTo!.isNotEmpty) {
+        if (record.dateFound.compareTo(filters.dateTo!) > 0) {
+          return false;
+        }
       }
 
       // Quick presets filter

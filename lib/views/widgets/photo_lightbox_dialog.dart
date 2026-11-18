@@ -1,5 +1,7 @@
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
+
 import '../../core/theme/app_colors.dart';
 import '../../models/forensic_photo.dart';
 
@@ -26,7 +28,10 @@ class _PhotoLightboxDialogState extends State<PhotoLightboxDialog> {
   @override
   void initState() {
     super.initState();
-    _currentIndex = widget.initialIndex.clamp(0, widget.photos.isNotEmpty ? widget.photos.length - 1 : 0);
+    _currentIndex = widget.initialIndex.clamp(
+      0,
+      widget.photos.isNotEmpty ? widget.photos.length - 1 : 0,
+    );
     _isBlurred = widget.initialBlur;
   }
 
@@ -59,7 +64,9 @@ class _PhotoLightboxDialogState extends State<PhotoLightboxDialog> {
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
+        side: BorderSide(
+          color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+        ),
       ),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 960, maxHeight: 820),
@@ -70,13 +77,24 @@ class _PhotoLightboxDialogState extends State<PhotoLightboxDialog> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
               decoration: BoxDecoration(
                 color: isDark ? AppColors.darkSurface : AppColors.slate50,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                border: Border(bottom: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.lightBorder)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
+                ),
+                border: Border(
+                  bottom: BorderSide(
+                    color: isDark
+                        ? AppColors.darkBorder
+                        : AppColors.lightBorder,
+                  ),
+                ),
               ),
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.primaryLight,
                       borderRadius: BorderRadius.circular(6),
@@ -108,7 +126,9 @@ class _PhotoLightboxDialogState extends State<PhotoLightboxDialog> {
                   OutlinedButton.icon(
                     onPressed: () => setState(() => _isBlurred = !_isBlurred),
                     icon: Icon(
-                      _isBlurred ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                      _isBlurred
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
                       size: 15,
                       color: _isBlurred ? AppColors.amber : AppColors.slate600,
                     ),
@@ -117,18 +137,32 @@ class _PhotoLightboxDialogState extends State<PhotoLightboxDialog> {
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: _isBlurred ? AppColors.amber : AppColors.slate700,
+                        color: _isBlurred
+                            ? AppColors.amber
+                            : AppColors.slate700,
                       ),
                     ),
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      side: BorderSide(color: _isBlurred ? AppColors.goldBorder : AppColors.slate300),
-                      backgroundColor: _isBlurred ? AppColors.goldLight : Colors.transparent,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      side: BorderSide(
+                        color: _isBlurred
+                            ? AppColors.goldBorder
+                            : AppColors.slate300,
+                      ),
+                      backgroundColor: _isBlurred
+                          ? AppColors.goldLight
+                          : Colors.transparent,
                     ),
                   ),
                   const SizedBox(width: 8),
                   IconButton(
-                    icon: Icon(Icons.close, color: isDark ? AppColors.slate400 : AppColors.slate600),
+                    icon: Icon(
+                      Icons.close,
+                      color: isDark ? AppColors.slate400 : AppColors.slate600,
+                    ),
                     onPressed: () => Navigator.pop(context),
                     tooltip: 'Close Lightbox',
                   ),
@@ -157,11 +191,18 @@ class _PhotoLightboxDialogState extends State<PhotoLightboxDialog> {
                             child: const Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.broken_image_outlined, color: Colors.white54, size: 54),
+                                Icon(
+                                  Icons.broken_image_outlined,
+                                  color: Colors.white54,
+                                  size: 54,
+                                ),
                                 SizedBox(height: 12),
                                 Text(
                                   'Forensic media unavailable or network restricted',
-                                  style: TextStyle(color: Colors.white70, fontSize: 13),
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 13,
+                                  ),
                                 ),
                               ],
                             ),
@@ -182,21 +223,36 @@ class _PhotoLightboxDialogState extends State<PhotoLightboxDialog> {
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.visibility_off_outlined, color: AppColors.goldBright, size: 48),
+                                const Icon(
+                                  Icons.visibility_off_outlined,
+                                  color: AppColors.goldBright,
+                                  size: 48,
+                                ),
                                 const SizedBox(height: 12),
                                 const Text(
                                   'Sensitive Forensic Autopsy / Crime Scene Photo',
-                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
                                 ),
                                 const SizedBox(height: 6),
                                 const Text(
                                   'Blurred for public respect and sensitivity.',
-                                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 12,
+                                  ),
                                 ),
                                 const SizedBox(height: 16),
                                 ElevatedButton.icon(
-                                  onPressed: () => setState(() => _isBlurred = false),
-                                  icon: const Icon(Icons.remove_red_eye_outlined, size: 16),
+                                  onPressed: () =>
+                                      setState(() => _isBlurred = false),
+                                  icon: const Icon(
+                                    Icons.remove_red_eye_outlined,
+                                    size: 16,
+                                  ),
                                   label: const Text('Reveal Evidence Photo'),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: AppColors.primary,
@@ -218,7 +274,11 @@ class _PhotoLightboxDialogState extends State<PhotoLightboxDialog> {
                         backgroundColor: Colors.black54,
                         radius: 22,
                         child: IconButton(
-                          icon: const Icon(Icons.chevron_left, color: Colors.white, size: 28),
+                          icon: const Icon(
+                            Icons.chevron_left,
+                            color: Colors.white,
+                            size: 28,
+                          ),
                           onPressed: () => setState(() => _currentIndex--),
                           tooltip: 'Previous Photo',
                         ),
@@ -226,14 +286,19 @@ class _PhotoLightboxDialogState extends State<PhotoLightboxDialog> {
                     ),
 
                   // Right Navigation Arrow
-                  if (widget.photos.length > 1 && _currentIndex < widget.photos.length - 1)
+                  if (widget.photos.length > 1 &&
+                      _currentIndex < widget.photos.length - 1)
                     Positioned(
                       right: 16,
                       child: CircleAvatar(
                         backgroundColor: Colors.black54,
                         radius: 22,
                         child: IconButton(
-                          icon: const Icon(Icons.chevron_right, color: Colors.white, size: 28),
+                          icon: const Icon(
+                            Icons.chevron_right,
+                            color: Colors.white,
+                            size: 28,
+                          ),
                           onPressed: () => setState(() => _currentIndex++),
                           tooltip: 'Next Photo',
                         ),
@@ -248,8 +313,16 @@ class _PhotoLightboxDialogState extends State<PhotoLightboxDialog> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
               decoration: BoxDecoration(
                 color: isDark ? AppColors.darkSurface : Colors.white,
-                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
-                border: Border(top: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.lightBorder)),
+                borderRadius: const BorderRadius.vertical(
+                  bottom: Radius.circular(16),
+                ),
+                border: Border(
+                  top: BorderSide(
+                    color: isDark
+                        ? AppColors.darkBorder
+                        : AppColors.lightBorder,
+                  ),
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -257,11 +330,17 @@ class _PhotoLightboxDialogState extends State<PhotoLightboxDialog> {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.info_outline, size: 16, color: AppColors.primary),
+                      const Icon(
+                        Icons.info_outline,
+                        size: 16,
+                        color: AppColors.primary,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          currentPhoto.caption.isNotEmpty ? currentPhoto.caption : 'Forensic documentation capture',
+                          currentPhoto.caption.isNotEmpty
+                              ? currentPhoto.caption
+                              : 'Forensic documentation capture',
                           style: TextStyle(
                             color: isDark ? Colors.white : AppColors.slate800,
                             fontWeight: FontWeight.w600,
@@ -271,7 +350,10 @@ class _PhotoLightboxDialogState extends State<PhotoLightboxDialog> {
                       ),
                       const Text(
                         'Pinch or scroll to zoom',
-                        style: TextStyle(color: AppColors.slate400, fontSize: 11),
+                        style: TextStyle(
+                          color: AppColors.slate400,
+                          fontSize: 11,
+                        ),
                       ),
                     ],
                   ),
@@ -294,7 +376,9 @@ class _PhotoLightboxDialogState extends State<PhotoLightboxDialog> {
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(6),
                                 border: Border.all(
-                                  color: isSelected ? AppColors.primary : AppColors.slate300,
+                                  color: isSelected
+                                      ? AppColors.primary
+                                      : AppColors.slate300,
                                   width: isSelected ? 2 : 1,
                                 ),
                               ),
@@ -302,7 +386,8 @@ class _PhotoLightboxDialogState extends State<PhotoLightboxDialog> {
                               child: Image.network(
                                 p.previewUrl,
                                 fit: BoxFit.cover,
-                                errorBuilder: (_, _, _) => const Icon(Icons.image, size: 16),
+                                errorBuilder: (_, _, _) =>
+                                    const Icon(Icons.image, size: 16),
                               ),
                             ),
                           );

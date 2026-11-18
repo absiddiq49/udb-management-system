@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/citizen_tip.dart';
 import '../../providers/request_provider.dart';
 import '../../core/utils/file_import_service.dart';
+import '../widgets/contact_action_pill.dart';
 
 class CitizenTipDialog extends StatefulWidget {
   final String bodyReference;
@@ -353,6 +355,23 @@ class _CitizenTipDialogState extends State<CitizenTipDialog> {
           'An assigned investigating officer will verify the General Diary details and contact you at ${_phoneController.text.trim()}.',
           textAlign: TextAlign.center,
           style: TextStyle(color: textSec, fontSize: 13, height: 1.5),
+        ),
+        const SizedBox(height: 16),
+        Wrap(
+          spacing: 8,
+          runSpacing: 6,
+          alignment: WrapAlignment.center,
+          children: [
+            const ContactActionPill.phone(
+              label: 'Emergency: 999',
+              target: '999',
+              isEmergency: true,
+            ),
+            ContactActionPill.phone(
+              label: 'CID Desk: ${AppConstants.cidHelpline}',
+              target: AppConstants.cidHelpline,
+            ),
+          ],
         ),
         const SizedBox(height: 24),
         ElevatedButton(

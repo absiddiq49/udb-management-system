@@ -6,6 +6,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../../models/official_access_request.dart';
 import '../../providers/request_provider.dart';
+import '../widgets/contact_action_pill.dart';
 
 class IoAccessRequestView extends StatefulWidget {
   final VoidCallback onCancel;
@@ -737,7 +738,28 @@ class _IoAccessRequestViewState extends State<IoAccessRequestView> {
                       child: _infoRow('Posting Unit / Thana', req.postingUnit, textPri, textSec),
                     ),
                     Expanded(
-                      child: _infoRow('Official Contact', '${req.contactPhone} | ${req.officialEmail}', textPri, textSec),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Official Contact', style: TextStyle(color: textSec, fontSize: 11)),
+                          const SizedBox(height: 3),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 4,
+                            children: [
+                              ContactActionPill.phone(
+                                label: req.contactPhone,
+                                target: req.contactPhone,
+                              ),
+                              ContactActionPill.email(
+                                label: req.officialEmail,
+                                target: req.officialEmail,
+                                emailSubject: 'CID Official IO Access: ${req.requestCode}',
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),

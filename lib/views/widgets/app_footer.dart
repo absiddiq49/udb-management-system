@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/constants/app_constants.dart';
 import '../../core/utils/responsive.dart';
+import '../../providers/locale_provider.dart';
+import 'contact_action_pill.dart';
 
 class AppFooter extends StatelessWidget {
   const AppFooter({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final loc = context.watch<LocaleProvider>();
     final isDesktop = Responsive.isDesktop(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -23,8 +26,8 @@ class AppFooter extends StatelessWidget {
         border: Border(top: BorderSide(color: borderColor, width: 1)),
       ),
       padding: EdgeInsets.symmetric(
-        horizontal: isDesktop ? 64 : 20,
-        vertical: 36,
+        horizontal: isDesktop ? 48 : 16,
+        vertical: 32,
       ),
       child: Column(
         children: [
@@ -41,94 +44,107 @@ class AppFooter extends StatelessWidget {
                       children: [
                         Image.asset(
                           'assets/images/cid-logo-blue-ui.png',
-                          height: 32,
+                          height: 34,
                           errorBuilder: (_, _, _) => const Icon(Icons.shield_outlined, color: AppColors.primary, size: 28),
                         ),
                         const SizedBox(width: 10),
                         Text(
-                          'CID BANGLADESH',
+                          loc.tr('UDBMS BANGLADESH • CID', 'ইউডিবিএমএস বাংলাদেশ • সিআইডি'),
                           style: TextStyle(
                             color: headingColor,
                             fontWeight: FontWeight.w800,
                             letterSpacing: 0.8,
-                            fontSize: 13,
+                            fontSize: 13.5,
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      'Central Intelligence Bureau (CIB) & Forensic DNA Profiling Laboratory.\n'
-                      'Standardized under Interpol DVI (Disaster Victim Identification) Guidelines and Police Regulations of Bengal (PRB).',
-                      style: TextStyle(color: bodyColor, fontSize: 12, height: 1.55),
+                      loc.tr(
+                        'Central Intelligence Bureau (CIB) & Forensic DNA Profiling Laboratory, CID Malibagh, Dhaka.\n'
+                        'Standardized under Police Regulations of Bengal (PRB Rules 299-303) and CrPC Section 174.',
+                        'কেন্দ্রীয় গোয়েন্দা শাখা (সিআইবি) এবং জাতীয় ফরেনসিক ডিএনএ ল্যাবরেটরি, সিআইডি মালিবাগ, ঢাকা।\n'
+                        'বেঙ্গল পুলিশ রেগুলেশন (পিআরবি নিয়ম ২৯৯-৩০৩) এবং ফৌজদারি কার্যবিধি ১৭৪ ধারা অনুযায়ী পরিচালিত।',
+                      ),
+                      style: TextStyle(color: bodyColor, fontSize: 11.5, height: 1.55),
                     ),
                   ],
                 ),
               ),
 
               if (isDesktop) ...[
-                const SizedBox(width: 48),
+                const SizedBox(width: 40),
                 // Emergency Dispatch
                 Expanded(
                   flex: 2,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'EMERGENCY & HELPLINE',
-                        style: TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w700,
+                      Text(
+                        loc.tr('EMERGENCY & HELPLINE', 'জরুরি যোগাযোগ ও হেল্পলাইন'),
+                        style: const TextStyle(
+                          color: Color(0xFF0F2646),
+                          fontWeight: FontWeight.w800,
                           fontSize: 11,
                           letterSpacing: 0.5,
                         ),
                       ),
                       const SizedBox(height: 10),
-                      Row(
+                      Wrap(
+                        direction: Axis.vertical,
+                        spacing: 8,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppColors.redLight,
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(color: AppColors.redBorder),
-                            ),
-                            child: const Text('24/7', style: TextStyle(color: AppColors.red, fontSize: 10, fontWeight: FontWeight.bold)),
+                          ContactActionPill.phone(
+                            label: loc.tr('National Emergency: 999 (24/7)', 'জাতীয় জরুরি সেবা: ৯৯৯ (২৪/৭)'),
+                            target: '999',
+                            isEmergency: true,
                           ),
-                          const SizedBox(width: 8),
-                          Text('National Emergency: 999', style: TextStyle(color: headingColor, fontSize: 12, fontWeight: FontWeight.w600)),
+                          ContactActionPill.phone(
+                            label: loc.tr('CID Desk: 02-48311051', 'সিআইডি কন্ট্রোল রুম: ০২-৪৮৩১১০৫১'),
+                            target: '0248311051',
+                          ),
+                          ContactActionPill.phone(
+                            label: loc.tr('Anjuman Mufidul Islam: 02-9336611', 'আঞ্জুমান মফিদুল ইসলাম: ০২-৯৩৩৬৬১১'),
+                            target: '029336611',
+                          ),
                         ],
                       ),
-                      const SizedBox(height: 6),
-                      Text('CID CIB Desk: ${AppConstants.cidHelpline}', style: TextStyle(color: bodyColor, fontSize: 12)),
-                      const SizedBox(height: 4),
-                      Text('Official Email: ${AppConstants.cidEmail}', style: TextStyle(color: bodyColor, fontSize: 12)),
                     ],
                   ),
                 ),
 
-                const SizedBox(width: 48),
-                // Forensic Compliance
+                const SizedBox(width: 40),
+                // Legal & Forensic Mandate
                 Expanded(
                   flex: 2,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'LEGAL & ETHICAL MANDATE',
-                        style: TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w700,
+                      Text(
+                        loc.tr('LEGAL & ETHICAL MANDATE', 'আইনি ও সুরতহাল নীতিমালা'),
+                        style: const TextStyle(
+                          color: Color(0xFF0F2646),
+                          fontWeight: FontWeight.w800,
                           fontSize: 11,
                           letterSpacing: 0.5,
                         ),
                       ),
                       const SizedBox(height: 10),
-                      Text('• CrPC Section 174 (Police Inquest)', style: TextStyle(color: bodyColor, fontSize: 12)),
+                      Text(
+                        loc.tr('• CrPC §174 (Police Inquest & Magistrate Report)', '• ফৌজদারি কার্যবিধি ১৭৪ ধারা (পুলিশ সুরতহাল প্রতিবেদন)'),
+                        style: TextStyle(color: bodyColor, fontSize: 11.5),
+                      ),
                       const SizedBox(height: 4),
-                      Text('• Interpol Pink Form (Post-Mortem Standard)', style: TextStyle(color: bodyColor, fontSize: 12)),
+                      Text(
+                        loc.tr('• PRB Rule 299-303 (Unidentified Deceased Procedures)', '• পিআরবি নিয়ম ২৯৯-৩০৩ (মৃতদেহ সংরক্ষণ ও আঞ্জুমানে হস্তান্তর)'),
+                        style: TextStyle(color: bodyColor, fontSize: 11.5),
+                      ),
                       const SizedBox(height: 4),
-                      Text('• SHA-256 Cryptographic Report Integrity', style: TextStyle(color: bodyColor, fontSize: 12)),
+                      Text(
+                        loc.tr('• Interpol Pink Form DVI Standard Protocol', '• ইন্টারপোল গোলাপি ফর্ম (পোস্ট-মর্টেম DVI নির্দেশিকা)'),
+                        style: TextStyle(color: bodyColor, fontSize: 11.5),
+                      ),
                     ],
                   ),
                 ),
@@ -136,9 +152,9 @@ class AppFooter extends StatelessWidget {
             ],
           ),
 
-          const SizedBox(height: 28),
+          const SizedBox(height: 24),
           Divider(color: borderColor),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
 
           // Copyright & Disclaimer
           Row(
@@ -146,8 +162,11 @@ class AppFooter extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  '© 2026 Criminal Investigation Department (CID), Bangladesh Police. Standardized Forensic Deceased Registry.',
-                  style: TextStyle(color: mutedColor, fontSize: 11),
+                  loc.tr(
+                    '© 2026 Criminal Investigation Department (CID), Bangladesh Police. Real-Time Inter-District Forensic Records Sharing Platform.',
+                    '© ২০২৬ অপরাধ তদন্ত বিভাগ (সিআইডি), বাংলাদেশ পুলিশ। আন্তঃজেলা অপরাধ ও অজ্ঞাত মৃতদেহ সমন্বয় নেটওয়ার্ক।',
+                  ),
+                  style: TextStyle(color: mutedColor, fontSize: 10.5),
                 ),
               ),
               Row(
@@ -161,9 +180,9 @@ class AppFooter extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 6),
-                  const Text(
-                    'Operational & Verified',
-                    style: TextStyle(color: AppColors.green, fontSize: 11, fontWeight: FontWeight.w600),
+                  Text(
+                    loc.tr('Operational & Verified', 'সক্রিয় ও প্রত্যয়িত'),
+                    style: const TextStyle(color: AppColors.green, fontSize: 10.5, fontWeight: FontWeight.w600),
                   ),
                 ],
               ),

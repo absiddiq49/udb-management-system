@@ -50,53 +50,17 @@ class UdbProvider extends ChangeNotifier {
   }
 
   void updateKeywords(String keywords) {
-    _filters = UdbFilterParams(
-      keywords: keywords,
-      gender: _filters.gender,
-      ageGroup: _filters.ageGroup,
-      division: _filters.division,
-      district: _filters.district,
-      thana: _filters.thana,
-      status: _filters.status,
-      hasFingerprint: _filters.hasFingerprint,
-      hasDna: _filters.hasDna,
-      quickPreset: _filters.quickPreset,
-      sortOption: _filters.sortOption,
-    );
+    _filters = _filters.copyWith(keywords: keywords);
     notifyListeners();
   }
 
   void updateSort(UdbSortOption sort) {
-    _filters = UdbFilterParams(
-      keywords: _filters.keywords,
-      gender: _filters.gender,
-      ageGroup: _filters.ageGroup,
-      division: _filters.division,
-      district: _filters.district,
-      thana: _filters.thana,
-      status: _filters.status,
-      hasFingerprint: _filters.hasFingerprint,
-      hasDna: _filters.hasDna,
-      quickPreset: _filters.quickPreset,
-      sortOption: sort,
-    );
+    _filters = _filters.copyWith(sortOption: sort);
     notifyListeners();
   }
 
   void updateQuickPreset(String? preset) {
-    _filters = UdbFilterParams(
-      keywords: _filters.keywords,
-      gender: _filters.gender,
-      ageGroup: _filters.ageGroup,
-      division: _filters.division,
-      district: _filters.district,
-      thana: _filters.thana,
-      status: _filters.status,
-      hasFingerprint: _filters.hasFingerprint,
-      hasDna: _filters.hasDna,
-      quickPreset: preset,
-      sortOption: _filters.sortOption,
-    );
+    _filters = _filters.copyWith(quickPreset: preset);
     notifyListeners();
   }
 

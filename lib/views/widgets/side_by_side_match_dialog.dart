@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../core/theme/app_colors.dart';
 import '../../models/udb_record.dart';
 import '../../services/cross_matching_service.dart';
@@ -41,7 +42,9 @@ class SideBySideMatchDialog extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               decoration: BoxDecoration(
                 color: isDark ? AppColors.darkSurface : const Color(0xFFF8FAFC),
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
+                ),
                 border: Border(bottom: BorderSide(color: borderColor)),
               ),
               child: Row(
@@ -52,7 +55,11 @@ class SideBySideMatchDialog extends StatelessWidget {
                       color: AppColors.primary.withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.compare_arrows_rounded, color: AppColors.primary, size: 22),
+                    child: const Icon(
+                      Icons.compare_arrows_rounded,
+                      color: AppColors.primary,
+                      size: 22,
+                    ),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -63,22 +70,35 @@ class SideBySideMatchDialog extends StatelessWidget {
                           children: [
                             Text(
                               'Interpol DVI Forensic Cross-Match Inspection',
-                              style: TextStyle(color: textPri, fontWeight: FontWeight.w800, fontSize: 16),
+                              style: TextStyle(
+                                color: textPri,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 16,
+                              ),
                             ),
                             const SizedBox(width: 10),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
-                                color: matchResult.score >= 80 ? AppColors.greenLight : AppColors.goldLight,
+                                color: matchResult.score >= 80
+                                    ? AppColors.greenLight
+                                    : AppColors.goldLight,
                                 borderRadius: BorderRadius.circular(6),
                                 border: Border.all(
-                                  color: matchResult.score >= 80 ? AppColors.greenBorder : AppColors.goldBorder,
+                                  color: matchResult.score >= 80
+                                      ? AppColors.greenBorder
+                                      : AppColors.goldBorder,
                                 ),
                               ),
                               child: Text(
                                 '${matchResult.score.toInt()}% MATCH • ${matchResult.confidenceLevel.toUpperCase()}',
                                 style: TextStyle(
-                                  color: matchResult.score >= 80 ? AppColors.greenDark : AppColors.goldDark,
+                                  color: matchResult.score >= 80
+                                      ? AppColors.greenDark
+                                      : AppColors.goldDark,
                                   fontSize: 10.5,
                                   fontWeight: FontWeight.w800,
                                 ),
@@ -111,7 +131,12 @@ class SideBySideMatchDialog extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Score Breakdown Visual Meter Strip
-                    _buildScoreBreakdownStrip(matchResult, isDark, textPri, textSec),
+                    _buildScoreBreakdownStrip(
+                      matchResult,
+                      isDark,
+                      textPri,
+                      textSec,
+                    ),
 
                     const SizedBox(height: 24),
 
@@ -124,20 +149,40 @@ class SideBySideMatchDialog extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Expanded(
-                                child: _buildAnteMortemColumn(missing, isDark, textPri, textSec),
+                                child: _buildAnteMortemColumn(
+                                  missing,
+                                  isDark,
+                                  textPri,
+                                  textSec,
+                                ),
                               ),
                               const SizedBox(width: 16),
                               Expanded(
-                                child: _buildPostMortemColumn(record, isDark, textPri, textSec),
+                                child: _buildPostMortemColumn(
+                                  record,
+                                  isDark,
+                                  textPri,
+                                  textSec,
+                                ),
                               ),
                             ],
                           );
                         } else {
                           return Column(
                             children: [
-                              _buildAnteMortemColumn(missing, isDark, textPri, textSec),
+                              _buildAnteMortemColumn(
+                                missing,
+                                isDark,
+                                textPri,
+                                textSec,
+                              ),
                               const SizedBox(height: 16),
-                              _buildPostMortemColumn(record, isDark, textPri, textSec),
+                              _buildPostMortemColumn(
+                                record,
+                                isDark,
+                                textPri,
+                                textSec,
+                              ),
                             ],
                           );
                         }
@@ -150,7 +195,9 @@ class SideBySideMatchDialog extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: isDark ? AppColors.darkSurface : AppColors.slate50,
+                        color: isDark
+                            ? AppColors.darkSurface
+                            : AppColors.slate50,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: borderColor),
                       ),
@@ -159,11 +206,19 @@ class SideBySideMatchDialog extends StatelessWidget {
                         children: [
                           Row(
                             children: [
-                              const Icon(Icons.fact_check_outlined, color: AppColors.primary, size: 18),
+                              const Icon(
+                                Icons.fact_check_outlined,
+                                color: AppColors.primary,
+                                size: 18,
+                              ),
                               const SizedBox(width: 8),
                               Text(
                                 'Algorithmic Similarity Vectors & Transparent Audit Reasons',
-                                style: TextStyle(color: textPri, fontWeight: FontWeight.bold, fontSize: 13),
+                                style: TextStyle(
+                                  color: textPri,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
                               ),
                             ],
                           ),
@@ -174,10 +229,20 @@ class SideBySideMatchDialog extends StatelessWidget {
                               child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Icon(Icons.check_circle_outline, color: AppColors.green, size: 15),
+                                  const Icon(
+                                    Icons.check_circle_outline,
+                                    color: AppColors.green,
+                                    size: 15,
+                                  ),
                                   const SizedBox(width: 8),
                                   Expanded(
-                                    child: Text(r, style: TextStyle(color: textPri, fontSize: 12.5)),
+                                    child: Text(
+                                      r,
+                                      style: TextStyle(
+                                        color: textPri,
+                                        fontSize: 12.5,
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
@@ -196,7 +261,9 @@ class SideBySideMatchDialog extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
               decoration: BoxDecoration(
                 color: isDark ? AppColors.darkSurface : Colors.white,
-                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+                borderRadius: const BorderRadius.vertical(
+                  bottom: Radius.circular(16),
+                ),
                 border: Border(top: BorderSide(color: borderColor)),
               ),
               child: Row(
@@ -206,7 +273,9 @@ class SideBySideMatchDialog extends StatelessWidget {
                     onPressed: () {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Preparing Forensic Ante-Mortem vs Post-Mortem Comparison PDF...'),
+                          content: Text(
+                            'Preparing Forensic Ante-Mortem vs Post-Mortem Comparison PDF...',
+                          ),
                           backgroundColor: AppColors.primary,
                         ),
                       );
@@ -215,7 +284,11 @@ class SideBySideMatchDialog extends StatelessWidget {
                     label: const Text('Print Comparison Sheet'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: textSec,
-                      side: BorderSide(color: isDark ? AppColors.darkBorder : AppColors.slate300),
+                      side: BorderSide(
+                        color: isDark
+                            ? AppColors.darkBorder
+                            : AppColors.slate300,
+                      ),
                     ),
                   ),
                   Row(
@@ -224,10 +297,15 @@ class SideBySideMatchDialog extends StatelessWidget {
                         onPressed: () {
                           showDialog(
                             context: context,
-                            builder: (_) => CitizenTipDialog(bodyReference: record.referenceNo),
+                            builder: (_) => CitizenTipDialog(
+                              bodyReference: record.referenceNo,
+                            ),
                           );
                         },
-                        icon: const Icon(Icons.record_voice_over_outlined, size: 15),
+                        icon: const Icon(
+                          Icons.record_voice_over_outlined,
+                          size: 15,
+                        ),
                         label: const Text('Submit Relative Match Claim'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.gold,
@@ -242,7 +320,10 @@ class SideBySideMatchDialog extends StatelessWidget {
                             onOpenDossier!(record);
                           }
                         },
-                        icon: const Icon(Icons.folder_shared_outlined, size: 15),
+                        icon: const Icon(
+                          Icons.folder_shared_outlined,
+                          size: 15,
+                        ),
                         label: const Text('Open Deceased Dossier'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
@@ -280,11 +361,19 @@ class SideBySideMatchDialog extends StatelessWidget {
             children: [
               Text(
                 '5-Vector Interpol Scoring Breakdown',
-                style: TextStyle(color: textPri, fontWeight: FontWeight.bold, fontSize: 12.5),
+                style: TextStyle(
+                  color: textPri,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12.5,
+                ),
               ),
               Text(
                 'Total Score: ${res.score.toInt()} / 100 Points',
-                style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 12),
+                style: const TextStyle(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
               ),
             ],
           ),
@@ -294,10 +383,30 @@ class SideBySideMatchDialog extends StatelessWidget {
             runSpacing: 10,
             children: [
               _vectorProgress('Sex Align', res.sexScore, 30, AppColors.blue),
-              _vectorProgress('Age Proximity', res.ageScore, 25, AppColors.green),
-              _vectorProgress('Stature (Height)', res.heightScore, 20, AppColors.cyan),
-              _vectorProgress('District Jurisdiction', res.districtScore, 10, AppColors.gold),
-              _vectorProgress('Marks & Clothing', res.keywordScore, 15, AppColors.purple),
+              _vectorProgress(
+                'Age Proximity',
+                res.ageScore,
+                25,
+                AppColors.green,
+              ),
+              _vectorProgress(
+                'Stature (Height)',
+                res.heightScore,
+                20,
+                AppColors.cyan,
+              ),
+              _vectorProgress(
+                'District Jurisdiction',
+                res.districtScore,
+                10,
+                AppColors.gold,
+              ),
+              _vectorProgress(
+                'Marks & Clothing',
+                res.keywordScore,
+                15,
+                AppColors.purple,
+              ),
             ],
           ),
         ],
@@ -315,8 +424,21 @@ class SideBySideMatchDialog extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(label, style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600)),
-              Text('${val.toInt()}/${max.toInt()}', style: TextStyle(fontSize: 10.5, color: color, fontWeight: FontWeight.bold)),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Text(
+                '${val.toInt()}/${max.toInt()}',
+                style: TextStyle(
+                  fontSize: 10.5,
+                  color: color,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 4),
@@ -357,11 +479,19 @@ class SideBySideMatchDialog extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(Icons.person_search, color: AppColors.goldDark, size: 16),
+                const Icon(
+                  Icons.person_search,
+                  color: AppColors.goldDark,
+                  size: 16,
+                ),
                 const SizedBox(width: 8),
                 const Text(
                   'ANTE-MORTEM (Yellow Form: Missing Person)',
-                  style: TextStyle(color: AppColors.goldDark, fontWeight: FontWeight.bold, fontSize: 12),
+                  style: TextStyle(
+                    color: AppColors.goldDark,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),
@@ -373,12 +503,42 @@ class SideBySideMatchDialog extends StatelessWidget {
                 _specRow('Full Name', missing.fullName, textSec, textPri),
                 _specRow('GD / FIR Ref', missing.gdNumber, textSec, textPri),
                 _specRow('Biological Sex', missing.gender, textSec, textPri),
-                _specRow('Age at Missing', '${missing.age} Years', textSec, textPri),
-                _specRow('Height / Stature', '${missing.heightCm} cm', textSec, textPri),
-                _specRow('Location Missing', '${missing.thana}, ${missing.district}', textSec, textPri),
-                _specRow('Distinguishing Marks', missing.distinguishingMarks, textSec, textPri),
-                _specRow('Last Seen Clothing', missing.lastSeenClothing, textSec, textPri),
-                _specRow('Date Reported Missing', missing.dateMissing, textSec, textPri),
+                _specRow(
+                  'Age at Missing',
+                  '${missing.age} Years',
+                  textSec,
+                  textPri,
+                ),
+                _specRow(
+                  'Height / Stature',
+                  '${missing.heightCm} cm',
+                  textSec,
+                  textPri,
+                ),
+                _specRow(
+                  'Location Missing',
+                  '${missing.thana}, ${missing.district}',
+                  textSec,
+                  textPri,
+                ),
+                _specRow(
+                  'Distinguishing Marks',
+                  missing.distinguishingMarks,
+                  textSec,
+                  textPri,
+                ),
+                _specRow(
+                  'Last Seen Clothing',
+                  missing.lastSeenClothing,
+                  textSec,
+                  textPri,
+                ),
+                _specRow(
+                  'Date Reported Missing',
+                  missing.dateMissing,
+                  textSec,
+                  textPri,
+                ),
               ],
             ),
           ),
@@ -410,11 +570,19 @@ class SideBySideMatchDialog extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(Icons.biotech_outlined, color: AppColors.primary, size: 16),
+                const Icon(
+                  Icons.biotech_outlined,
+                  color: AppColors.primary,
+                  size: 16,
+                ),
                 const SizedBox(width: 8),
                 const Text(
                   'POST-MORTEM (Pink Form: Deceased Dossier)',
-                  style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 12),
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),
@@ -423,14 +591,49 @@ class SideBySideMatchDialog extends StatelessWidget {
             padding: const EdgeInsets.all(14),
             child: Column(
               children: [
-                _specRow('Case Reference', record.referenceNo, textSec, textPri),
-                _specRow('Police Inquest Ref', record.gdCaseReference, textSec, textPri),
+                _specRow(
+                  'Case Reference',
+                  record.referenceNo,
+                  textSec,
+                  textPri,
+                ),
+                _specRow(
+                  'Police Inquest Ref',
+                  record.gdCaseReference,
+                  textSec,
+                  textPri,
+                ),
                 _specRow('Biological Sex', record.gender, textSec, textPri),
-                _specRow('Estimated Age', '~${record.estimatedAge} Years (${record.ageGroup})', textSec, textPri),
-                _specRow('Height / Stature', '${record.heightCm} cm', textSec, textPri),
-                _specRow('Recovery Location', '${record.thana}, ${record.district}', textSec, textPri),
-                _specRow('Identified Marks', record.identificationMarks, textSec, textPri),
-                _specRow('Recovered Clothing', record.clothing, textSec, textPri),
+                _specRow(
+                  'Estimated Age',
+                  '~${record.estimatedAge} Years (${record.ageGroup})',
+                  textSec,
+                  textPri,
+                ),
+                _specRow(
+                  'Height / Stature',
+                  '${record.heightCm} cm',
+                  textSec,
+                  textPri,
+                ),
+                _specRow(
+                  'Recovery Location',
+                  '${record.thana}, ${record.district}',
+                  textSec,
+                  textPri,
+                ),
+                _specRow(
+                  'Identified Marks',
+                  record.identificationMarks,
+                  textSec,
+                  textPri,
+                ),
+                _specRow(
+                  'Recovered Clothing',
+                  record.clothing,
+                  textSec,
+                  textPri,
+                ),
                 _specRow('Date Discovered', record.dateFound, textSec, textPri),
               ],
             ),
@@ -448,7 +651,14 @@ class SideBySideMatchDialog extends StatelessWidget {
         children: [
           SizedBox(
             width: 130,
-            child: Text(label, style: TextStyle(color: textSec, fontSize: 11, fontWeight: FontWeight.w600)),
+            child: Text(
+              label,
+              style: TextStyle(
+                color: textSec,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
           Expanded(
             child: Text(

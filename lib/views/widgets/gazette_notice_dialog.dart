@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/utils/link_service.dart';
 import '../../models/udb_record.dart';
+import 'contact_action_pill.dart';
 
 class GazetteNoticeDialog extends StatelessWidget {
   final UdbRecord record;
@@ -53,12 +55,7 @@ class GazetteNoticeDialog extends StatelessWidget {
                     icon: Icon(Icons.print_outlined, color: isDark ? AppColors.goldBright : AppColors.primary, size: 20),
                     tooltip: 'Print Official Gazette Notice',
                     onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Preparing print document for Official Police Gazette Notice...'),
-                          backgroundColor: AppColors.primary,
-                        ),
-                      );
+                      LinkService.printPage();
                     },
                   ),
                   IconButton(
@@ -201,10 +198,26 @@ class GazetteNoticeDialog extends StatelessWidget {
                             'তবে অবিলম্বে উদ্ধারকারী কর্মকর্তা অথবা সিআইডি সেন্ট্রাল ইন্টেলিজেন্স ব্যুরো (CIB) হেল্পলাইনে যোগাযোগ করার অনুরোধ করা হচ্ছে।',
                             style: TextStyle(color: AppColors.redDark, fontSize: 12, height: 1.4),
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'জরুরি হটলাইন: 999 • সিআইডি সিআইবি হেল্পলাইন: ${AppConstants.cidHelpline} • ইমেইল: ${AppConstants.cidEmail}',
-                            style: const TextStyle(color: AppColors.redDark, fontWeight: FontWeight.bold, fontSize: 12),
+                          const SizedBox(height: 10),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              const ContactActionPill.phone(
+                                label: 'কল করুন: ৯৯৯ (জরুরি ২৪/৭)',
+                                target: '999',
+                                isEmergency: true,
+                              ),
+                              ContactActionPill.phone(
+                                label: 'সিআইডি সিআইবি হেল্পলাইন: ${AppConstants.cidHelpline}',
+                                target: AppConstants.cidHelpline,
+                              ),
+                              ContactActionPill.email(
+                                label: 'ইমেইল: ${AppConstants.cidEmail}',
+                                target: AppConstants.cidEmail,
+                                emailSubject: 'CID Gazette Claim - Ref: ${record.referenceNo}',
+                              ),
+                            ],
                           ),
                         ],
                       ),

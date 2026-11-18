@@ -10,6 +10,7 @@ import '../../providers/udb_provider.dart';
 import '../../providers/request_provider.dart';
 import 'case_registration_view.dart';
 import 'io_requests_manager_view.dart';
+import '../widgets/contact_action_pill.dart';
 
 class OfficialDashboardView extends StatefulWidget {
   final ValueChanged<UdbRecord> onSelectRecord;
@@ -481,8 +482,13 @@ class _OfficialDashboardViewState extends State<OfficialDashboardView> with Sing
                       ),
                       const SizedBox(width: 10),
                       Text(
-                        'Reported by: ${rep.reporterName} (${rep.reporterPhone})',
+                        'Reported by: ${rep.reporterName}',
                         style: TextStyle(color: textPri, fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                      const SizedBox(width: 8),
+                      ContactActionPill.phone(
+                        label: rep.reporterPhone,
+                        target: rep.reporterPhone,
                       ),
                     ],
                   ),
@@ -693,9 +699,9 @@ class _OfficialDashboardViewState extends State<OfficialDashboardView> with Sing
                         style: TextStyle(color: textPri, fontSize: 12, fontWeight: FontWeight.w600),
                       ),
                     ),
-                    Text(
-                      '📞 ${tip.claimantPhone}',
-                      style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.bold),
+                    ContactActionPill.phone(
+                      label: 'Call: ${tip.claimantPhone}',
+                      target: tip.claimantPhone,
                     ),
                   ],
                 ),

@@ -6,6 +6,7 @@ import '../../core/utils/responsive.dart';
 import '../../models/official_access_request.dart';
 import '../../providers/request_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../widgets/contact_action_pill.dart';
 
 class IoRequestsManagerView extends StatefulWidget {
   const IoRequestsManagerView({super.key});
@@ -357,7 +358,37 @@ class _IoRequestsManagerViewState extends State<IoRequestsManagerView> {
                       Expanded(child: _field('Posting Unit / Thana', req.postingUnit, isLight, textPri)),
                       Expanded(child: _field('Target Case', req.targetCaseReference, isLight, textPri)),
                       Expanded(child: _field('Investigation GD/FIR', req.investigationGdFir, isLight, textPri)),
-                      Expanded(child: _field('Contact', '${req.contactPhone} • ${req.officialEmail}', isLight, textPri)),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Contact Officer',
+                              style: TextStyle(
+                                color: isLight ? AppColors.slate500 : AppColors.darkTextMuted,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 4,
+                              children: [
+                                ContactActionPill.phone(
+                                  label: req.contactPhone,
+                                  target: req.contactPhone,
+                                ),
+                                ContactActionPill.email(
+                                  label: req.officialEmail,
+                                  target: req.officialEmail,
+                                  emailSubject: 'CID Access Request: ${req.requestCode}',
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   )
                 : Column(
@@ -372,7 +403,37 @@ class _IoRequestsManagerViewState extends State<IoRequestsManagerView> {
                       Row(
                         children: [
                           Expanded(child: _field('Investigation GD/FIR', req.investigationGdFir, isLight, textPri)),
-                          Expanded(child: _field('Contact', '${req.contactPhone}', isLight, textPri)),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Contact',
+                                  style: TextStyle(
+                                    color: isLight ? AppColors.slate500 : AppColors.darkTextMuted,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Wrap(
+                                  spacing: 4,
+                                  runSpacing: 4,
+                                  children: [
+                                    ContactActionPill.phone(
+                                      label: req.contactPhone,
+                                      target: req.contactPhone,
+                                    ),
+                                    ContactActionPill.email(
+                                      label: req.officialEmail,
+                                      target: req.officialEmail,
+                                      emailSubject: 'CID Access Request: ${req.requestCode}',
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                     ],

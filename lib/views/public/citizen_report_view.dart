@@ -7,6 +7,7 @@ import '../../core/utils/responsive.dart';
 import '../../core/utils/file_import_service.dart';
 import '../../models/citizen_report.dart';
 import '../../providers/request_provider.dart';
+import '../widgets/contact_action_pill.dart';
 
 class CitizenReportView extends StatefulWidget {
   final VoidCallback onCancel;
@@ -282,26 +283,21 @@ class _CitizenReportViewState extends State<CitizenReportView> with SingleTicker
                         ),
                       ),
                       const SizedBox(height: 10),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.redDark.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(
-                            color: AppColors.red.withValues(alpha: 0.3),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 6,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          const ContactActionPill.phone(
+                            label: 'Call 999 Police Hotline (24/7)',
+                            target: '999',
+                            isEmergency: true,
                           ),
-                        ),
-                        child: const Text(
-                          'For immediate life-threatening emergencies, dial 999 directly.',
-                          style: TextStyle(
-                            color: AppColors.red,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
+                          ContactActionPill.phone(
+                            label: 'CID Control: ${AppConstants.cidHelpline}',
+                            target: AppConstants.cidHelpline,
                           ),
-                        ),
+                        ],
                       ),
                     ],
                   ),
@@ -732,6 +728,28 @@ class _CitizenReportViewState extends State<CitizenReportView> with SingleTicker
             'An investigating officer may call ${_reporterPhoneController.text.trim()} to guide the response team to the spot.',
             textAlign: TextAlign.center,
             style: TextStyle(color: textSec, fontSize: 13, height: 1.5),
+          ),
+          const SizedBox(height: 18),
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            alignment: WrapAlignment.center,
+            children: [
+              const ContactActionPill.phone(
+                label: 'Emergency: 999',
+                target: '999',
+                isEmergency: true,
+              ),
+              ContactActionPill.phone(
+                label: 'CID Desk: ${AppConstants.cidHelpline}',
+                target: AppConstants.cidHelpline,
+              ),
+              ContactActionPill.email(
+                label: 'Email CID',
+                target: AppConstants.cidEmail,
+                emailSubject: 'Citizen Report Query - Ref: $_generatedReportCode',
+              ),
+            ],
           ),
           const SizedBox(height: 24),
           ElevatedButton(

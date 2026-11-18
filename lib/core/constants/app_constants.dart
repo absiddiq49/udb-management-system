@@ -23,6 +23,36 @@ class AppConstants {
     'Mymensingh',
   ];
 
+  static const Map<String, List<String>> divisionDistricts = {
+    'Dhaka': ['Dhaka', 'Gazipur', 'Narayanganj', 'Tangail', 'Faridpur', 'Manikganj', 'Munshiganj', 'Narsingdi', 'Kishoreganj', 'Gopalganj', 'Madaripur', 'Rajbari', 'Shariatpur'],
+    'Chattogram': ['Chattogram', 'Cox\'s Bazar', 'Cumilla', 'Feni', 'Brahmanbaria', 'Noakhali', 'Chandpur', 'Khagrachhari', 'Rangamati', 'Bandarban', 'Lakshmipur'],
+    'Rajshahi': ['Rajshahi', 'Bogura', 'Pabna', 'Sirajganj', 'Naogaon', 'Natore', 'Chapai Nawabganj', 'Joypurhat'],
+    'Khulna': ['Khulna', 'Jashore', 'Kushtia', 'Satkhira', 'Bagerhat', 'Jhenaidah', 'Chuadanga', 'Meherpur', 'Magura', 'Narail'],
+    'Barishal': ['Barishal', 'Patuakhali', 'Bhola', 'Pirojpur', 'Jhalokati', 'Barguna'],
+    'Sylhet': ['Sylhet', 'Moulvibazar', 'Habiganj', 'Sunamganj'],
+    'Rangpur': ['Rangpur', 'Dinajpur', 'Kurigram', 'Gaibandha', 'Thakurgaon', 'Nilphamari', 'Lalmonirhat', 'Panchagarh'],
+    'Mymensingh': ['Mymensingh', 'Jamalpur', 'Netrokona', 'Sherpur'],
+  };
+
+  static const List<String> complexions = [
+    'Fair (ফর্সা)',
+    'Wheatish (উজ্জ্বল শ্যামলা)',
+    'Medium / Dusky (শ্যামলা)',
+    'Dark (কালো)',
+  ];
+
+  static const List<String> commonClothing = [
+    'Lungi (লুঙ্গি)',
+    'Shirt (শার্ট)',
+    'T-Shirt / Ganji (গেঞ্জি)',
+    'Panjabi (পাঞ্জাবি)',
+    'Pants / Trousers (প্যান্ট)',
+    'Pajama (পায়জামা)',
+    'Sari (শাড়ি)',
+    'Salwar Kameez (সালোয়ার কামিজ)',
+    'Burqa / Hijab (বোরকা / হিজাব)',
+  ];
+
   static const List<String> genders = [
     'Male',
     'Female',

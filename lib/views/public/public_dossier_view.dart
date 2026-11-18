@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/constants/app_constants.dart';
 import '../../core/utils/responsive.dart';
+import '../../core/utils/link_service.dart';
 import '../../models/udb_record.dart';
 import '../../providers/udb_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../widgets/sensitive_image_card.dart';
 import '../widgets/gazette_notice_dialog.dart';
 import '../widgets/photo_lightbox_dialog.dart';
+import '../widgets/contact_action_pill.dart';
 import 'citizen_tip_dialog.dart';
 
 class PublicDossierView extends StatefulWidget {
@@ -86,6 +89,11 @@ class _PublicDossierViewState extends State<PublicDossierView> {
                             ),
                           );
                         },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.print_outlined, size: 18, color: AppColors.primary),
+                        tooltip: 'Print Dossier Summary',
+                        onPressed: () => LinkService.printPage(),
                       ),
                     ],
                   ),
@@ -452,6 +460,60 @@ class _PublicDossierViewState extends State<PublicDossierView> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
                       child: const Text('Provide Information to CID'),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 14),
+
+              // Urgent Assistance & Direct Contact Bar
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                decoration: BoxDecoration(
+                  color: isLight ? Colors.white : AppColors.darkCardBg,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: isLight ? AppColors.lightBorder : AppColors.darkBorder),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.support_agent_rounded, color: AppColors.primary, size: 24),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Recognize this individual or have matching ante-mortem records?',
+                            style: TextStyle(color: textPri, fontWeight: FontWeight.bold, fontSize: 13),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Reach CID Central Intelligence Bureau or recovery unit directly below.',
+                            style: TextStyle(color: textSec, fontSize: 11.5),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        const ContactActionPill.phone(
+                          label: 'Call 999',
+                          target: '999',
+                          isEmergency: true,
+                        ),
+                        ContactActionPill.phone(
+                          label: 'Call CID Helpline',
+                          target: AppConstants.cidHelpline,
+                        ),
+                        ContactActionPill.email(
+                          label: 'Email CID Desk',
+                          target: AppConstants.cidEmail,
+                          emailSubject: 'Deceased Identification Lead - Ref: ${record.referenceNo}',
+                        ),
+                      ],
                     ),
                   ],
                 ),

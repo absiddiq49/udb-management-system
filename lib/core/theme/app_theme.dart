@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'app_colors.dart';
 
 class AppTheme {
@@ -67,7 +68,10 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: const BorderSide(color: AppColors.lightBorder),
@@ -80,8 +84,14 @@ class AppTheme {
           borderRadius: BorderRadius.circular(10),
           borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
         ),
-        hintStyle: const TextStyle(color: AppColors.lightTextMuted, fontSize: 14),
-        labelStyle: const TextStyle(color: AppColors.lightTextSecondary, fontSize: 14),
+        hintStyle: const TextStyle(
+          color: AppColors.lightTextMuted,
+          fontSize: 14,
+        ),
+        labelStyle: const TextStyle(
+          color: AppColors.lightTextSecondary,
+          fontSize: 14,
+        ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -98,7 +108,10 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.slate800,
-          side: const BorderSide(color: AppColors.lightBorderStrong, width: 1.2),
+          side: const BorderSide(
+            color: AppColors.lightBorderStrong,
+            width: 1.2,
+          ),
           textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
           shape: RoundedRectangleBorder(
@@ -176,7 +189,10 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.darkInputBg,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: const BorderSide(color: AppColors.darkBorder),
@@ -189,8 +205,14 @@ class AppTheme {
           borderRadius: BorderRadius.circular(10),
           borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
         ),
-        hintStyle: const TextStyle(color: AppColors.darkTextMuted, fontSize: 14),
-        labelStyle: const TextStyle(color: AppColors.darkTextSecondary, fontSize: 14),
+        hintStyle: const TextStyle(
+          color: AppColors.darkTextMuted,
+          fontSize: 14,
+        ),
+        labelStyle: const TextStyle(
+          color: AppColors.darkTextSecondary,
+          fontSize: 14,
+        ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(

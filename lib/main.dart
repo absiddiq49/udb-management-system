@@ -2,12 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import 'core/theme/app_theme.dart';
 import 'models/udb_record.dart';
 import 'providers/auth_provider.dart';
 import 'providers/udb_provider.dart';
 import 'providers/request_provider.dart';
 import 'providers/theme_provider.dart';
+import 'providers/locale_provider.dart';
 import 'views/widgets/app_navbar.dart';
 import 'views/public/public_home_view.dart';
 import 'views/public/public_dossier_view.dart';
@@ -31,17 +33,20 @@ class UnidentifiedDeadBodyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => LocaleProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => UdbProvider()),
         ChangeNotifierProxyProvider<UdbProvider, RequestProvider>(
-          create: (context) => RequestProvider(context.read<UdbProvider>().repository),
-          update: (_, udb, previous) => previous ?? RequestProvider(udb.repository),
+          create: (context) =>
+              RequestProvider(context.read<UdbProvider>().repository),
+          update: (_, udb, previous) =>
+              previous ?? RequestProvider(udb.repository),
         ),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, theme, _) {
           return MaterialApp(
-            title: 'CID Unidentified Dead Body Management System | Bangladesh Police',
+            title: 'UDBMS BANGLADESH | Unidentified Deceased Body Management System',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
@@ -100,7 +105,9 @@ class _AppShellState extends State<AppShell> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Session expired after 15 minutes of inactivity. Please sign in again.'),
+          content: Text(
+            'Session expired after 15 minutes of inactivity. Please sign in again.',
+          ),
         ),
       );
     }
@@ -145,15 +152,14 @@ class _AppShellState extends State<AppShell> {
       switch (_activeNavIndex) {
         case 0:
           currentBody = PublicHomeView(
-            onSelectRecord: (record) => setState(() => _selectedPublicRecord = record),
+            onSelectRecord: (record) =>
+                setState(() => _selectedPublicRecord = record),
             onReportFoundBody: () => _navigateTo(1),
             onRequestIoAccess: () => _navigateTo(2),
           );
           break;
         case 1:
-          currentBody = CitizenReportView(
-            onCancel: () => _navigateTo(0),
-          );
+          currentBody = CitizenReportView(onCancel: () => _navigateTo(0));
           break;
         case 2:
           currentBody = IoAccessRequestView(
@@ -168,13 +174,15 @@ class _AppShellState extends State<AppShell> {
           break;
         case 3:
           currentBody = CrossMatchingView(
-            onSelectRecord: (record) => setState(() => _selectedPublicRecord = record),
+            onSelectRecord: (record) =>
+                setState(() => _selectedPublicRecord = record),
           );
           break;
         case 4:
           if (auth.isAuthenticated) {
             currentBody = OfficialDashboardView(
-              onSelectRecord: (record) => setState(() => _selectedOfficialRecord = record),
+              onSelectRecord: (record) =>
+                  setState(() => _selectedOfficialRecord = record),
             );
           } else {
             currentBody = OfficialLoginView(
@@ -186,7 +194,8 @@ class _AppShellState extends State<AppShell> {
           break;
         default:
           currentBody = PublicHomeView(
-            onSelectRecord: (record) => setState(() => _selectedPublicRecord = record),
+            onSelectRecord: (record) =>
+                setState(() => _selectedPublicRecord = record),
             onReportFoundBody: () => _navigateTo(1),
             onRequestIoAccess: () => _navigateTo(2),
           );
@@ -199,20 +208,15 @@ class _AppShellState extends State<AppShell> {
       onPointerMove: (_) => _resetIdleTimer(),
       onPointerHover: (_) => _resetIdleTimer(),
       child: Scaffold(
-      body: Column(
-        children: [
-          // Top Navigation Bar
-          AppNavbar(
-            activeIndex: _activeNavIndex,
-            onNavigate: _navigateTo,
-          ),
+        body: Column(
+          children: [
+            // Top Navigation Bar
+            AppNavbar(activeIndex: _activeNavIndex, onNavigate: _navigateTo),
 
-          // Main View Content
-          Expanded(
-            child: currentBody,
-          ),
-        ],
-      ),
+            // Main View Content
+            Expanded(child: currentBody),
+          ],
+        ),
       ),
     );
   }
