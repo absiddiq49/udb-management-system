@@ -51,6 +51,7 @@ class UdbFilterParams {
   final String? status;
   final bool? hasFingerprint;
   final bool? hasDna;
+  final String? agency; // 'all', 'CID', 'DMP', 'PBI', 'RAB', 'Railway', 'Highway'
   final String? quickPreset; // 'all', 'withDna', 'withAfis', 'recent', 'floater', 'skeletal'
   final UdbSortOption sortOption;
 
@@ -73,6 +74,7 @@ class UdbFilterParams {
     this.status,
     this.hasFingerprint,
     this.hasDna,
+    this.agency,
     this.quickPreset,
     this.sortOption = UdbSortOption.dateDesc,
   });
@@ -96,6 +98,7 @@ class UdbFilterParams {
     String? status,
     bool? hasFingerprint,
     bool? hasDna,
+    String? agency,
     String? quickPreset,
     UdbSortOption? sortOption,
   }) {
@@ -118,6 +121,7 @@ class UdbFilterParams {
       status: status ?? this.status,
       hasFingerprint: hasFingerprint ?? this.hasFingerprint,
       hasDna: hasDna ?? this.hasDna,
+      agency: agency ?? this.agency,
       quickPreset: quickPreset ?? this.quickPreset,
       sortOption: sortOption ?? this.sortOption,
     );
@@ -142,6 +146,7 @@ class UdbFilterParams {
       (status == null || status!.isEmpty) &&
       hasFingerprint != true &&
       hasDna != true &&
+      (agency == null || agency == 'all' || agency!.isEmpty) &&
       (quickPreset == null || quickPreset == 'all' || quickPreset!.isEmpty);
 }
 
@@ -200,6 +205,18 @@ class UdbRepository {
 
       if (filters.hasDna == true && !record.hasDna) {
         return false;
+      }
+
+      // Law Enforcement Agency Filter
+      if (filters.agency != null && filters.agency!.isNotEmpty && filters.agency != 'all') {
+        final a = filters.agency!.toLowerCase();
+        final matches = record.inputTeam.toLowerCase().contains(a) ||
+                        record.recoveryOfficerUnit.toLowerCase().contains(a) ||
+                        record.source.toLowerCase().contains(a) ||
+                        record.thana.toLowerCase().contains(a);
+        if (!matches) {
+          return false;
+        }
       }
 
       // ZIPNET Age & Height Ranges

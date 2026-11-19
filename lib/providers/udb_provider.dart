@@ -64,6 +64,11 @@ class UdbProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void updateAgency(String? agency) {
+    _filters = _filters.copyWith(agency: agency);
+    notifyListeners();
+  }
+
   void resetFilters() {
     _filters = const UdbFilterParams();
     notifyListeners();

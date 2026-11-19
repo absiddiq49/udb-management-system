@@ -509,7 +509,124 @@ class _PublicHomeViewState extends State<PublicHomeView> {
               ],
             ),
           ),
+
+          const SizedBox(height: 10),
+
+          // Law Enforcement Agency Filter Strip
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                Text(
+                  loc.tr('Investigating Agency: ', 'তদন্তকারী ইউনিট: '),
+                  style: TextStyle(
+                    color: isDark ? AppColors.darkTextSecondary : const Color(0xFF0F2646),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                _agencyPill(
+                  code: 'all',
+                  label: loc.tr('All Agencies', 'সকল ইউনিট'),
+                  isSelected: udb.filters.agency == null || udb.filters.agency == 'all',
+                  onTap: () => udb.updateAgency('all'),
+                ),
+                _agencyPill(
+                  code: 'CID',
+                  label: loc.tr('CID Forensics', 'সিআইডি ফরেনসিক'),
+                  isSelected: udb.filters.agency == 'CID',
+                  onTap: () => udb.updateAgency(udb.filters.agency == 'CID' ? 'all' : 'CID'),
+                ),
+                _agencyPill(
+                  code: 'DMP',
+                  label: loc.tr('DMP (Dhaka)', 'ডিএমপি মেট্রোপলিটন'),
+                  isSelected: udb.filters.agency == 'DMP',
+                  onTap: () => udb.updateAgency(udb.filters.agency == 'DMP' ? 'all' : 'DMP'),
+                ),
+                _agencyPill(
+                  code: 'PBI',
+                  label: loc.tr('PBI Investigation', 'পিবিআই তদন্ত ব্যুরো'),
+                  isSelected: udb.filters.agency == 'PBI',
+                  onTap: () => udb.updateAgency(udb.filters.agency == 'PBI' ? 'all' : 'PBI'),
+                ),
+                _agencyPill(
+                  code: 'RAB',
+                  label: loc.tr('RAB Elite Force', 'র‍্যাব এলিট ফোর্স'),
+                  isSelected: udb.filters.agency == 'RAB',
+                  onTap: () => udb.updateAgency(udb.filters.agency == 'RAB' ? 'all' : 'RAB'),
+                ),
+                _agencyPill(
+                  code: 'Railway',
+                  label: loc.tr('Railway Police (GRP)', 'রেলওয়ে পুলিশ (জিআরপি)'),
+                  isSelected: udb.filters.agency == 'Railway',
+                  onTap: () => udb.updateAgency(udb.filters.agency == 'Railway' ? 'all' : 'Railway'),
+                ),
+                _agencyPill(
+                  code: 'Highway',
+                  label: loc.tr('Highway Police', 'হাইওয়ে পুলিশ'),
+                  isSelected: udb.filters.agency == 'Highway',
+                  onTap: () => udb.updateAgency(udb.filters.agency == 'Highway' ? 'all' : 'Highway'),
+                ),
+              ],
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _agencyPill({
+    required String code,
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final fg = isSelected
+        ? Colors.white
+        : (isDark ? AppColors.darkTextSecondary : const Color(0xFF1E293B));
+    final bg = isSelected
+        ? const Color(0xFF0F2646)
+        : (isDark ? AppColors.darkInputBg : const Color(0xFFF1F5F9));
+    final border = isSelected
+        ? const Color(0xFF38BDF8)
+        : (isDark ? AppColors.darkBorder : const Color(0xFFCBD5E1));
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: border, width: isSelected ? 1.2 : 0.8),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: isSelected ? const Color(0xFF38BDF8) : AppColors.slate400,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 5),
+              Text(
+                label,
+                style: TextStyle(
+                  color: fg,
+                  fontSize: 10.5,
+                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -583,6 +700,8 @@ class _PublicHomeViewState extends State<PublicHomeView> {
           ),
           if (f.quickPreset != null && f.quickPreset != 'all')
             _chip('Preset: ${f.quickPreset}', () => udb.updateQuickPreset('all')),
+          if (f.agency != null && f.agency!.isNotEmpty && f.agency != 'all')
+            _chip('Agency: ${f.agency}', () => udb.updateAgency('all')),
           if (f.keywords != null && f.keywords!.isNotEmpty)
             _chip('Keyword: "${f.keywords}"', () => udb.updateKeywords('')),
           if (f.gender != null && f.gender!.isNotEmpty)

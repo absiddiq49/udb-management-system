@@ -292,11 +292,11 @@ class AppNavbar extends StatelessWidget {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Text(
+                          Text(
                             'UDBMS',
                             style: TextStyle(
-                              color: Color(0xFF0A192F),
-                              fontSize: 25,
+                              color: isDark ? Colors.white : const Color(0xFF0A192F),
+                              fontSize: width < 600 ? 20 : 25,
                               fontWeight: FontWeight.w900,
                               letterSpacing: 1.5,
                               fontFamily: 'serif',
@@ -327,9 +327,9 @@ class AppNavbar extends StatelessWidget {
                           'Unidentified Deadbody Management System',
                           'অজ্ঞাত মৃতদেহ ব্যবস্থাপনা পদ্ধতি',
                         ),
-                        style: const TextStyle(
-                          color: Color(0xFF1E3A8A),
-                          fontSize: 12.5,
+                        style: TextStyle(
+                          color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF1E3A8A),
+                          fontSize: width < 600 ? 11 : 12.5,
                           fontWeight: FontWeight.w800,
                           letterSpacing: 0.5,
                         ),
@@ -342,7 +342,7 @@ class AppNavbar extends StatelessWidget {
                         ),
                         style: TextStyle(
                           color: isDark ? AppColors.darkTextSecondary : AppColors.slate600,
-                          fontSize: 10.5,
+                          fontSize: width < 600 ? 9.5 : 10.5,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -351,66 +351,76 @@ class AppNavbar extends StatelessWidget {
                 ),
               ),
 
-              // High-Visibility Multi-Agency Police Unit Badges (CID, DMP, PBI, RAB, RAILWAY, HIGHWAY)
-              if (width > 920)
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _unitBadge(
-                      unitCode: 'CID',
-                      subtext: loc.tr('Forensics', 'ফরেনসিক'),
-                      bgColor: const Color(0xFF0B2545),
-                      borderColor: const Color(0xFFDC2626),
-                      accentColor: const Color(0xFFFBBF24),
-                      textColor: Colors.white,
-                      tooltip: 'Criminal Investigation Department (CID) - DNA & AFIS Hub',
+              // Soothing Institutional Verification Tag & Helpline Info
+              if (width > 860)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF0F1E36) : const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF1E3A8A).withValues(alpha: 0.5) : const Color(0xFFCBD5E1),
                     ),
-                    _unitBadge(
-                      unitCode: 'DMP',
-                      subtext: loc.tr('Metropolitan', 'মেট্রোপলিটন'),
-                      bgColor: const Color(0xFF1E3A8A),
-                      borderColor: const Color(0xFF38BDF8),
-                      accentColor: const Color(0xFF38BDF8),
-                      textColor: Colors.white,
-                      tooltip: 'Dhaka Metropolitan Police - Thana Inquests & CIB Desk',
-                    ),
-                    _unitBadge(
-                      unitCode: 'PBI',
-                      subtext: loc.tr('Investigation', 'তদন্ত ব্যুরো'),
-                      bgColor: const Color(0xFF4C0519),
-                      borderColor: const Color(0xFFF43F5E),
-                      accentColor: const Color(0xFFFDA4AF),
-                      textColor: Colors.white,
-                      tooltip: 'Police Bureau of Investigation - Specialized Inquest & Cold Case',
-                    ),
-                    _unitBadge(
-                      unitCode: 'RAB',
-                      subtext: loc.tr('Elite Force', 'এলিট ফোর্স'),
-                      bgColor: const Color(0xFF064E3B),
-                      borderColor: const Color(0xFF10B981),
-                      accentColor: const Color(0xFFFCD34D),
-                      textColor: Colors.white,
-                      tooltip: 'Rapid Action Battalion - Intelligence & Special Search Operations',
-                    ),
-                    _unitBadge(
-                      unitCode: 'RAILWAY',
-                      subtext: loc.tr('GRP Police', 'রেলওয়ে পুলিশ'),
-                      bgColor: const Color(0xFF1E293B),
-                      borderColor: const Color(0xFF64748B),
-                      accentColor: const Color(0xFF38BDF8),
-                      textColor: Colors.white,
-                      tooltip: 'Railway Police Bangladesh - Track & Station Deceased Recoveries',
-                    ),
-                    _unitBadge(
-                      unitCode: 'HIGHWAY',
-                      subtext: loc.tr('Road Patrol', 'হাইওয়ে পুলিশ'),
-                      bgColor: const Color(0xFF78350F),
-                      borderColor: const Color(0xFFF59E0B),
-                      accentColor: const Color(0xFFFEF3C7),
-                      textColor: Colors.white,
-                      tooltip: 'Highway Police Bangladesh - Highway Inquest & Accident Victims',
-                    ),
-                  ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(7),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0F2646),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Icon(
+                          Icons.verified_user_rounded,
+                          color: AppColors.goldBright,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 7,
+                                height: 7,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF10B981),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                loc.tr('CENTRAL FORENSIC REPOSITORY', 'কেন্দ্রীয় ফরেনসিক ডেটাবেজ'),
+                                style: TextStyle(
+                                  color: isDark ? Colors.white : const Color(0xFF0F2646),
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 0.6,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            loc.tr(
+                              'Inter-Agency Inquest Network • CrPC §174',
+                              'আন্তঃইউনিট অপমৃত্যু তদন্ত নেটওয়ার্ক • ধারা ১৭৪',
+                            ),
+                            style: TextStyle(
+                              color: isDark ? AppColors.darkTextSecondary : AppColors.slate600,
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
             ],
           ),
@@ -598,75 +608,6 @@ class AppNavbar extends StatelessWidget {
       child: Text(
         text,
         style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
-      ),
-    );
-  }
-
-  Widget _unitBadge({
-    required String unitCode,
-    required String subtext,
-    required Color bgColor,
-    required Color borderColor,
-    required Color accentColor,
-    required Color textColor,
-    required String tooltip,
-  }) {
-    return Tooltip(
-      message: tooltip,
-      child: Container(
-        margin: const EdgeInsets.only(left: 6),
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: borderColor, width: 1.2),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.15),
-              blurRadius: 4,
-              offset: const Offset(0, 1.5),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 5,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    color: accentColor,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  unitCode,
-                  style: TextStyle(
-                    color: textColor,
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 0.8,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 1),
-            Text(
-              subtext,
-              style: TextStyle(
-                color: textColor.withValues(alpha: 0.85),
-                fontSize: 8.0,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.2,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

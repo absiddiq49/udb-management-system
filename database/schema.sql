@@ -1,15 +1,18 @@
 -- ====================================================================
--- CID BANGLADESH - UNIDENTIFIED DEAD BODY MANAGEMENT SYSTEM
--- PostgreSQL Database DDL Initialization Script
+-- CID BANGLADESH - UNIDENTIFIED DEAD BODY MANAGEMENT SYSTEM (UDBMS)
+-- PostgreSQL Database DDL Initialization Script with BetterAuth
 -- ====================================================================
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE EXTENSION IF NOT EXISTS "pg_trgm";
 
+-- --------------------------------------------------------------------
+-- 1. ENUMS FOR POLICE PROCEDURES & FORENSIC STATUS
+-- --------------------------------------------------------------------
 DO $$ BEGIN
     CREATE TYPE user_role_enum AS ENUM (
-        'citizen', 'external_io', 'cid_officer', 'forensic_expert', 'cib_admin', 'super_admin'
+        'citizen', 'external_io', 'forensic_expert', 'cid_officer', 'cib_admin', 'super_admin'
     );
 EXCEPTION WHEN duplicate_object THEN null;
 END $$;
@@ -43,24 +46,73 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN null;
 END $$;
 
-CREATE TABLE IF NOT EXISTS users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    username VARCHAR(100) UNIQUE NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    full_name VARCHAR(150) NOT NULL,
-    designation VARCHAR(100),
+-- --------------------------------------------------------------------
+-- 2. BETTER-AUTH INTEGRATION TABLES (Tiered Clearance)
+-- --------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS "user" (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL UNIQUE,
+    "emailVerified" BOOLEAN NOT NULL DEFAULT false,
+    image TEXT,
+    "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    role VARCHAR(50) DEFAULT 'citizen',
+    tier INTEGER NOT NULL DEFAULT 0,
+    "bpNumber" VARCHAR(50),
     rank VARCHAR(100),
-    bp_number VARCHAR(50) UNIQUE,
-    unit_thana VARCHAR(150),
-    phone_number VARCHAR(30),
-    role user_role_enum NOT NULL DEFAULT 'cid_officer',
-    is_active BOOLEAN NOT NULL DEFAULT true,
-    last_login_at TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    designation VARCHAR(150),
+    "unitThana" VARCHAR(150),
+    "phoneNumber" VARCHAR(50),
+    "isActive" BOOLEAN NOT NULL DEFAULT true
 );
 
+CREATE TABLE IF NOT EXISTS "session" (
+    id TEXT PRIMARY KEY,
+    "expiresAt" TIMESTAMP WITH TIME ZONE NOT NULL,
+    token TEXT NOT NULL UNIQUE,
+    "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "ipAddress" TEXT,
+    "userAgent" TEXT,
+    "userId" TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS "account" (
+    id TEXT PRIMARY KEY,
+    "accountId" TEXT NOT NULL,
+    "providerId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+    "accessToken" TEXT,
+    "refreshToken" TEXT,
+    "idToken" TEXT,
+    "accessTokenExpiresAt" TIMESTAMP WITH TIME ZONE,
+    "refreshTokenExpiresAt" TIMESTAMP WITH TIME ZONE,
+    scope TEXT,
+    password TEXT,
+    "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS "verification" (
+    id TEXT PRIMARY KEY,
+    identifier TEXT NOT NULL,
+    value TEXT NOT NULL,
+    "expiresAt" TIMESTAMP WITH TIME ZONE NOT NULL,
+    "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Legacy compatibility table view
+CREATE OR REPLACE VIEW users AS
+    SELECT id, email as username, email, "name" as full_name, designation, rank, "bpNumber" as bp_number,
+           "unitThana" as unit_thana, "phoneNumber" as phone_number, role, tier, "isActive" as is_active,
+           "createdAt" as created_at, "updatedAt" as updated_at
+    FROM "user";
+
+-- --------------------------------------------------------------------
+-- 3. OFFICIAL ACCESS REQUESTS (External IO Inquest Access)
+-- --------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS official_access_requests (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     request_code VARCHAR(30) UNIQUE NOT NULL,
@@ -78,7 +130,7 @@ CREATE TABLE IF NOT EXISTS official_access_requests (
     gd_attachment_url TEXT,
     status request_status_enum NOT NULL DEFAULT 'pending',
     review_notes TEXT,
-    reviewed_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    reviewed_by TEXT REFERENCES "user"(id) ON DELETE SET NULL,
     reviewed_at TIMESTAMP WITH TIME ZONE,
     access_token VARCHAR(255),
     token_expires_at TIMESTAMP WITH TIME ZONE,
@@ -86,11 +138,14 @@ CREATE TABLE IF NOT EXISTS official_access_requests (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- --------------------------------------------------------------------
+-- 4. UNIDENTIFIED DEAD BODIES (Central Inquest & Physical Registry)
+-- --------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS unidentified_dead_bodies (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     reference_no VARCHAR(50) UNIQUE NOT NULL,
     source VARCHAR(150) DEFAULT 'Central Intelligence Bureau (CIB)',
-    input_team VARCHAR(150),
+    input_team VARCHAR(150) DEFAULT 'CID Forensics',
     date_found DATE NOT NULL,
     time_found VARCHAR(20),
     division VARCHAR(100) NOT NULL,
@@ -129,6 +184,7 @@ CREATE TABLE IF NOT EXISTS unidentified_dead_bodies (
     dna_lab_reference VARCHAR(100),
     postmortem_reference VARCHAR(100),
     inquest_reference VARCHAR(100),
+    anjuman_burial_ref VARCHAR(100),
     case_narrative TEXT,
     confidential_officer_remarks TEXT,
     status case_status_enum NOT NULL DEFAULT 'Unidentified - new entry',
@@ -137,12 +193,15 @@ CREATE TABLE IF NOT EXISTS unidentified_dead_bodies (
     identified_full_name VARCHAR(150),
     identified_national_id VARCHAR(50),
     identified_at TIMESTAMP WITH TIME ZONE,
-    created_by UUID REFERENCES users(id) ON DELETE SET NULL,
-    updated_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    created_by TEXT REFERENCES "user"(id) ON DELETE SET NULL,
+    updated_by TEXT REFERENCES "user"(id) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- --------------------------------------------------------------------
+-- 5. FORENSIC PHOTOS
+-- --------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS forensic_photos (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     body_id UUID NOT NULL REFERENCES unidentified_dead_bodies(id) ON DELETE CASCADE,
@@ -159,6 +218,9 @@ CREATE TABLE IF NOT EXISTS forensic_photos (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- --------------------------------------------------------------------
+-- 6. FORENSIC DOCUMENTS (Autopsy, Viscera & Inquest PDFs)
+-- --------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS forensic_documents (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     body_id UUID NOT NULL REFERENCES unidentified_dead_bodies(id) ON DELETE CASCADE,
@@ -173,6 +235,9 @@ CREATE TABLE IF NOT EXISTS forensic_documents (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- --------------------------------------------------------------------
+-- 7. CITIZEN SIGHTING & EMERGENCY INTAKE REPORTS
+-- --------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS citizen_reports (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     report_reference VARCHAR(30) UNIQUE NOT NULL,
@@ -198,6 +263,9 @@ CREATE TABLE IF NOT EXISTS citizen_reports (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- --------------------------------------------------------------------
+-- 8. CITIZEN TIPS & RELATIVE MATCH CLAIMS
+-- --------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS citizen_tips_matches (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     body_id UUID NOT NULL REFERENCES unidentified_dead_bodies(id) ON DELETE CASCADE,
@@ -216,9 +284,12 @@ CREATE TABLE IF NOT EXISTS citizen_tips_matches (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- --------------------------------------------------------------------
+-- 9. CRYPTOGRAPHIC AUDIT LOGS (Tier 5 Compliance)
+-- --------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS audit_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    user_id TEXT REFERENCES "user"(id) ON DELETE SET NULL,
     bp_number VARCHAR(50),
     action VARCHAR(100) NOT NULL,
     entity_type VARCHAR(100),
@@ -229,13 +300,18 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- --------------------------------------------------------------------
+-- 10. OPTIMIZED SEARCH & GIN TRIGRAM INDEXES
+-- --------------------------------------------------------------------
 CREATE INDEX IF NOT EXISTS idx_udb_division_district_thana ON unidentified_dead_bodies(division, district, thana);
 CREATE INDEX IF NOT EXISTS idx_udb_date_found ON unidentified_dead_bodies(date_found DESC);
 CREATE INDEX IF NOT EXISTS idx_udb_gender_age ON unidentified_dead_bodies(gender, age_group);
 CREATE INDEX IF NOT EXISTS idx_udb_status ON unidentified_dead_bodies(status);
+CREATE INDEX IF NOT EXISTS idx_udb_input_team ON unidentified_dead_bodies(input_team);
 CREATE INDEX IF NOT EXISTS idx_udb_marks_trgm ON unidentified_dead_bodies USING gin (identification_marks gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_udb_tattoos_trgm ON unidentified_dead_bodies USING gin (tattoos gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_udb_clothing_trgm ON unidentified_dead_bodies USING gin (clothing_description gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_udb_ref_trgm ON unidentified_dead_bodies USING gin (reference_no gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_audit_user_action ON audit_logs(user_id, action, created_at DESC);
-
+CREATE INDEX IF NOT EXISTS idx_session_token ON "session"(token);
+CREATE INDEX IF NOT EXISTS idx_account_user ON "account"("userId");
