@@ -110,7 +110,7 @@ class _ForensicTableViewState extends State<ForensicTableView> {
                 Expanded(
                   child: Text(
                     loc.tr(
-                      'National Unidentified Deceased Register • CrPC §174 Inquests & Forensic Profiles',
+                      'National Unidentified Dead Body Register • CrPC §174 Inquests & Forensic Profiles',
                       'জাতীয় অজ্ঞাত মৃতদেহ রেজিস্ট্রি • ফৌজদারি কার্যবিধি ১৭৪ ধারা সুরতহাল ও ফরেনসিক প্রোফাইল',
                     ),
                     style: TextStyle(color: textPri, fontSize: 11.5, fontWeight: FontWeight.bold),

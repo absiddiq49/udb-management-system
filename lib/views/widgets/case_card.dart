@@ -325,7 +325,7 @@ class CaseCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 5),
                 Text(
-                  '${record.gender.toUpperCase()} DECEASED',
+                  '${record.gender.toUpperCase()} DEAD BODY',
                   style: TextStyle(
                     color: textPri,
                     fontSize: 11.5,

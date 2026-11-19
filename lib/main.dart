@@ -46,7 +46,7 @@ class UnidentifiedDeadBodyApp extends StatelessWidget {
       child: Consumer<ThemeProvider>(
         builder: (context, theme, _) {
           return MaterialApp(
-            title: 'UDBMS BANGLADESH | Unidentified Deceased Body Management System',
+            title: 'UDBMS BANGLADESH | Unidentified Dead Body Management System',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,

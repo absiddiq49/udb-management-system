@@ -9,8 +9,13 @@ class AppConstants {
   static const bool demoMode = true;
   
   static const String emergencyPolice = '999';
-  static const String cidHelpline = '+880 2 48312000';
+  static const String cidHelpline = '02-48311051';
   static const String cidEmail = 'cib@cid.police.gov.bd';
+  static const String riverPoliceControl = '01320-169598'; // নৌ পুলিশ কন্ট্রোল রুম (নদীতে ভাসমান লাশ)
+  static const String railwayPoliceControl = '01320-177598'; // রেলওয়ে পুলিশ কন্ট্রোল রুম (রেললাইনে উদ্ধারকৃত মরদেহ)
+  static const String highwayPoliceControl = '01320-182598'; // হাইওয়ে পুলিশ কন্ট্রোল রুম (মহাসড়কে সড়ক দুর্ঘটনা)
+  static const String nationalDnaLab = '02-48310051'; // সিআইডি জাতীয় ডিএনএ প্রোফাইলিং ল্যাবরেটরি
+  static const String anjumanMufidulIslam = '02-9336611'; // আঞ্জুমান মুফিদুল ইসলাম (কাকরাইল প্রধান কার্যালয়)
 
   static const List<String> divisions = [
     'Dhaka',

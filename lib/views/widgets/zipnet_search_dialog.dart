@@ -24,6 +24,7 @@ class ZipnetSearchDialog extends StatefulWidget {
 class _ZipnetSearchDialogState extends State<ZipnetSearchDialog> {
   String? _division;
   String? _district;
+  String? _agency;
   final _thanaController = TextEditingController();
   final _dateFromController = TextEditingController();
   final _dateToController = TextEditingController();
@@ -48,6 +49,7 @@ class _ZipnetSearchDialogState extends State<ZipnetSearchDialog> {
     final f = widget.initialFilters;
     _division = f.division;
     _district = f.district;
+    _agency = f.agency;
     if (f.thana != null) _thanaController.text = f.thana!;
     if (f.dateFrom != null) _dateFromController.text = f.dateFrom!;
     if (f.dateTo != null) _dateToController.text = f.dateTo!;
@@ -95,6 +97,7 @@ class _ZipnetSearchDialogState extends State<ZipnetSearchDialog> {
     final updated = widget.initialFilters.copyWith(
       division: _division?.isEmpty == true ? null : _division,
       district: _district?.isEmpty == true ? null : _district,
+      agency: _agency == 'all' || _agency?.isEmpty == true ? null : _agency,
       thana: _thanaController.text.trim().isEmpty ? null : _thanaController.text.trim(),
       dateFrom: _dateFromController.text.trim().isEmpty ? null : _dateFromController.text.trim(),
       dateTo: _dateToController.text.trim().isEmpty ? null : _dateToController.text.trim(),
@@ -200,6 +203,25 @@ class _ZipnetSearchDialogState extends State<ZipnetSearchDialog> {
                   children: [
                     // Section 1: Jurisdiction & Geography
                     _sectionTitle(loc.tr('1. Administrative Jurisdiction (প্রশাসনিক এলাকা ও থানা)', '১. প্রশাসনিক এখতিয়ার ও থানা'), Icons.map_outlined),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      initialValue: _agency ?? 'all',
+                      decoration: InputDecoration(
+                        labelText: loc.tr('Investigating Agency / Unit (তদন্তকারী ইউনিট)', 'তদন্তকারী সংস্থা / ইউনিট'),
+                        hintText: loc.tr('All Agencies', 'সকল ইউনিট'),
+                      ),
+                      dropdownColor: cardBg,
+                      items: [
+                        DropdownMenuItem(value: 'all', child: Text(loc.tr('All Agencies (সকল ইউনিট)', 'সকল ইউনিট'))),
+                        DropdownMenuItem(value: 'CID', child: Text(loc.tr('CID Forensics (সিআইডি)', 'সিআইডি ফরেনসিক'))),
+                        DropdownMenuItem(value: 'DMP', child: Text(loc.tr('DMP Metropolitan (ডিএমপি)', 'ডিএমপি ঢাকা'))),
+                        DropdownMenuItem(value: 'PBI', child: Text(loc.tr('PBI Investigation (পিবিআই)', 'পিবিআই তদন্ত ব্যুরো'))),
+                        DropdownMenuItem(value: 'RAB', child: Text(loc.tr('RAB Elite Force (র‍্যাব)', 'র‍্যাব এলিট ফোর্স'))),
+                        DropdownMenuItem(value: 'Railway', child: Text(loc.tr('Railway Police (রেলওয়ে পুলিশ)', 'রেলওয়ে পুলিশ (জিআরপি)'))),
+                        DropdownMenuItem(value: 'Highway', child: Text(loc.tr('Highway Police (হাইওয়ে পুলিশ)', 'হাইওয়ে পুলিশ'))),
+                      ],
+                      onChanged: (val) => setState(() => _agency = val),
+                    ),
                     const SizedBox(height: 12),
                     Row(
                       children: [

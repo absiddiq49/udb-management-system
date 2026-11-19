@@ -324,7 +324,7 @@ class SideBySideMatchDialog extends StatelessWidget {
                           Icons.folder_shared_outlined,
                           size: 15,
                         ),
-                        label: const Text('Open Deceased Dossier'),
+                        label: const Text('Open Dead Body Dossier'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
                           foregroundColor: Colors.white,
@@ -577,7 +577,7 @@ class SideBySideMatchDialog extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 const Text(
-                  'POST-MORTEM (Pink Form: Deceased Dossier)',
+                  'POST-MORTEM (Pink Form: Dead Body Dossier)',
                   style: TextStyle(
                     color: AppColors.primary,
                     fontWeight: FontWeight.bold,

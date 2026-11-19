@@ -168,7 +168,7 @@ class _OfficialDashboardViewState extends State<OfficialDashboardView> with Sing
                   unselectedLabelColor: textSec,
                   labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                   tabs: [
-                    Tab(text: 'All Deceased Cases (${udb.totalRecords})'),
+                    Tab(text: 'All Dead Body Cases (${udb.totalRecords})'),
                     const Tab(text: 'Case Intake Wizard'),
                     Tab(
                       child: Row(

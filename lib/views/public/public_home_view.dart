@@ -796,7 +796,7 @@ class _PublicHomeViewState extends State<PublicHomeView> {
             const SizedBox(height: 14),
             Text(
               loc.tr(
-                'No Matching Deceased Records Found in UDBMS Registry',
+                'No Matching Dead Body Records Found in UDBMS Registry',
                 'ইউডিবিএমএস রেজিস্ট্রিতে কোনো মিল পাওয়া যায়নি',
               ),
               style: const TextStyle(color: Color(0xFF0F2646), fontWeight: FontWeight.bold, fontSize: 16),

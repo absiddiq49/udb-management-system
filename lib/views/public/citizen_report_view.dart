@@ -38,8 +38,8 @@ class _CitizenReportViewState extends State<CitizenReportView> with SingleTicker
   bool _hasPhotoAttached = false;
   final List<PickedImageFile> _attachedPhotos = [];
 
-  Future<void> _handlePickPhoto() async {
-    final picked = await pickImageFromDevice();
+  Future<void> _handlePickPhoto({bool fromCamera = false}) async {
+    final picked = fromCamera ? await pickImageFromCamera() : await pickImageFromDevice();
     if (picked != null) {
       setState(() {
         _attachedPhotos.add(picked);
@@ -110,8 +110,8 @@ class _CitizenReportViewState extends State<CitizenReportView> with SingleTicker
         timeSpotted: 'Current',
         description: _descriptionController.text.trim(),
         conditionDescription: _conditionController.text.trim(),
-        photoUrls: _hasPhotoAttached
-            ? ['https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=600&q=80']
+        photoUrls: _attachedPhotos.isNotEmpty
+            ? _attachedPhotos.map((p) => p.dataUrl).toList()
             : const [],
         status: 'PENDING_POLICE_DISPATCH',
         submittedAt: 'Just now',
@@ -265,7 +265,7 @@ class _CitizenReportViewState extends State<CitizenReportView> with SingleTicker
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Report an Unidentified Deceased Individual (Emergency Public Intake)',
+                        'Report an Unidentified Dead Body (Emergency Public Intake)',
                         style: TextStyle(
                           color: textPri,
                           fontWeight: FontWeight.bold,
@@ -418,7 +418,7 @@ class _CitizenReportViewState extends State<CitizenReportView> with SingleTicker
                 controller: _descriptionController,
                 maxLines: 3,
                 decoration: const InputDecoration(
-                  labelText: 'Description of the Deceased & Clothing *',
+                  labelText: 'Description of the Dead Body & Clothing *',
                   hintText: 'Apparent gender, approximate age, clothing color, shoes, visible marks...',
                 ),
                 validator: (v) => v?.trim().isEmpty == true ? 'Required' : null,
@@ -428,7 +428,7 @@ class _CitizenReportViewState extends State<CitizenReportView> with SingleTicker
                 controller: _conditionController,
                 decoration: const InputDecoration(
                   labelText: 'Body Condition (if noticeable)',
-                  hintText: 'e.g. In water, recently deceased, decomposed, charred, skeletal...',
+                  hintText: 'e.g. In water, recently dead, decomposed, charred, skeletal...',
                 ),
               ),
             ],
@@ -551,19 +551,36 @@ class _CitizenReportViewState extends State<CitizenReportView> with SingleTicker
                 ),
                 const SizedBox(height: 12),
               ],
-              OutlinedButton.icon(
-                onPressed: _handlePickPhoto,
-                icon: const Icon(Icons.file_upload_outlined, size: 16),
-                label: Text(
-                  _attachedPhotos.isEmpty ? 'Import Photo from Device / Gallery' : 'Import Another Photo',
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppColors.primary),
-                  foregroundColor: AppColors.primary,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () => _handlePickPhoto(fromCamera: true),
+                    icon: const Icon(Icons.camera_alt_rounded, size: 16),
+                    label: const Text('Capture with Camera (ক্যামেরা দিয়ে ছবি তুলুন)'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0F2646),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: () => _handlePickPhoto(fromCamera: false),
+                    icon: const Icon(Icons.photo_library_outlined, size: 16),
+                    label: Text(
+                      _attachedPhotos.isEmpty ? 'Choose from Files / Gallery (গ্যালারি)' : 'Import Another File',
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppColors.primary),
+                      foregroundColor: AppColors.primary,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -893,7 +910,7 @@ class _CitizenReportViewState extends State<CitizenReportView> with SingleTicker
                   const SizedBox(height: 12),
                   _trackRow('Recovery Location', '${_searchedReport!.spotLocation}, ${_searchedReport!.thana}, ${_searchedReport!.district}', textSec, textPri),
                   _trackRow('Reported Date & Time', '${_searchedReport!.dateSpotted} (${_searchedReport!.timeSpotted})', textSec, textPri),
-                  _trackRow('Deceased Description', _searchedReport!.description, textSec, textPri),
+                  _trackRow('Dead Body Description', _searchedReport!.description, textSec, textPri),
                   _trackRow('Condition Observed', _searchedReport!.conditionDescription, textSec, textPri),
                   _trackRow('Jurisdictional Police Station', '${_searchedReport!.thana} PS, ${_searchedReport!.district} District', textSec, textPri),
 

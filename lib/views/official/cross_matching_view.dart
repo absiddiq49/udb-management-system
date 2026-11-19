@@ -151,13 +151,13 @@ class _CrossMatchingViewState extends State<CrossMatchingView> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Automated Missing Person vs Unidentified Deceased Cross-Matching Engine',
+                            'Automated Missing Person vs Unidentified Dead Body Cross-Matching Engine',
                             style: TextStyle(color: textPri, fontWeight: FontWeight.bold, fontSize: 16),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             'Algorithmic similarity scoring modeled on US NamUs and Interpol DVI Ante-Mortem (Yellow) to Post-Mortem (Pink) matching. '
-                            'Input missing person parameters to rank potential matches across the national deceased database.',
+                            'Input missing person parameters to rank potential matches across the national unidentified dead body database.',
                             style: TextStyle(color: textSec, fontSize: 12, height: 1.4),
                           ),
                         ],

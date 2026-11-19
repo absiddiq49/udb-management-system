@@ -20,12 +20,16 @@ class PickedImageFile {
   }
 }
 
-Future<PickedImageFile?> pickImageFromDevice() async {
+Future<PickedImageFile?> pickImageFromDevice({bool useCamera = false}) async {
   // Stub for tests / VM
   return PickedImageFile(
-    name: 'forensic_evidence_sample.jpg',
+    name: useCamera ? 'camera_snapshot.jpg' : 'forensic_evidence_sample.jpg',
     dataUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=600&q=80',
     bytes: Uint8List(0),
     sizeInBytes: 1024 * 350,
   );
+}
+
+Future<PickedImageFile?> pickImageFromCamera() async {
+  return pickImageFromDevice(useCamera: true);
 }

@@ -192,7 +192,7 @@ class _CaseRegistrationViewState extends State<CaseRegistrationView> {
       context.read<UdbProvider>().addRecord(newRecord);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Deceased record ${newRecord.referenceNo} registered in CIB database!'),
+          content: Text('Unidentified dead body record ${newRecord.referenceNo} registered in CIB database!'),
           backgroundColor: AppColors.green,
         ),
       );
@@ -200,8 +200,8 @@ class _CaseRegistrationViewState extends State<CaseRegistrationView> {
     }
   }
 
-  Future<void> _importPhotoDirect() async {
-    final picked = await pickImageFromDevice();
+  Future<void> _importPhotoDirect({bool fromCamera = false}) async {
+    final picked = fromCamera ? await pickImageFromCamera() : await pickImageFromDevice();
     if (picked != null) {
       _promptPhotoDetails(picked);
     }
@@ -311,10 +311,24 @@ class _CaseRegistrationViewState extends State<CaseRegistrationView> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    Navigator.pop(ctx);
+                    await _importPhotoDirect(fromCamera: true);
+                  },
+                  icon: const Icon(Icons.camera_alt_rounded, size: 18),
+                  label: const Text('Capture with Camera (ক্যামেরা)'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0F2646),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                ),
+                const SizedBox(height: 10),
                 OutlinedButton.icon(
                   onPressed: () async {
                     Navigator.pop(ctx);
-                    await _importPhotoDirect();
+                    await _importPhotoDirect(fromCamera: false);
                   },
                   icon: const Icon(Icons.file_upload_outlined, size: 18),
                   label: const Text('Pick Image from Desktop / Gallery'),
@@ -444,7 +458,7 @@ class _CaseRegistrationViewState extends State<CaseRegistrationView> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Register Unidentified Deceased Record (Interpol DVI Intake)',
+                              'Register Unidentified Dead Body Record (Interpol DVI Intake)',
                               style: TextStyle(color: textPri, fontWeight: FontWeight.bold, fontSize: 18),
                             ),
                             const SizedBox(height: 4),
@@ -966,11 +980,22 @@ class _CaseRegistrationViewState extends State<CaseRegistrationView> {
                   'Attached Forensic Photos (${_photos.length}):',
                   style: TextStyle(color: textPri, fontWeight: FontWeight.bold, fontSize: 13),
                 ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
                   children: [
                     ElevatedButton.icon(
-                      onPressed: _importPhotoDirect,
+                      onPressed: () => _importPhotoDirect(fromCamera: true),
+                      icon: const Icon(Icons.camera_alt_rounded, size: 15),
+                      label: const Text('Capture with Camera', style: TextStyle(fontSize: 12)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0F2646),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: () => _importPhotoDirect(fromCamera: false),
                       icon: const Icon(Icons.file_upload_outlined, size: 15),
                       label: const Text('Import from Desktop / Gallery', style: TextStyle(fontSize: 12)),
                       style: ElevatedButton.styleFrom(
@@ -979,7 +1004,6 @@ class _CaseRegistrationViewState extends State<CaseRegistrationView> {
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       ),
                     ),
-                    const SizedBox(width: 8),
                     TextButton.icon(
                       onPressed: _addPhotoDialog,
                       icon: const Icon(Icons.link, size: 15),

@@ -137,7 +137,7 @@ class AppFooter extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        loc.tr('• PRB Rule 299-303 (Unidentified Deceased Procedures)', '• পিআরবি নিয়ম ২৯৯-৩০৩ (মৃতদেহ সংরক্ষণ ও আঞ্জুমানে হস্তান্তর)'),
+                        loc.tr('• PRB Rule 299-303 (Unidentified Dead Body Procedures)', '• পিআরবি নিয়ম ২৯৯-৩০৩ (অজ্ঞাত মৃতদেহ সংরক্ষণ ও আঞ্জুমানে হস্তান্তর)'),
                         style: TextStyle(color: bodyColor, fontSize: 11.5),
                       ),
                       const SizedBox(height: 4),

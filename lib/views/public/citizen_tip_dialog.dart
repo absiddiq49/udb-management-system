@@ -149,7 +149,7 @@ class _CitizenTipDialogState extends State<CitizenTipDialog> {
             ),
             const SizedBox(height: 14),
             Text(
-              'If you believe this unidentified deceased individual could be your missing family member, please share relevant details. A CID investigation officer will review this lead with highest priority.',
+              'If you believe this unidentified dead body could be your missing family member, please share relevant details. A CID investigation officer will review this lead with highest priority.',
               style: TextStyle(color: textSec, fontSize: 13, height: 1.45),
             ),
             const SizedBox(height: 16),

@@ -23,9 +23,12 @@ class PickedImageFile {
   }
 }
 
-Future<PickedImageFile?> pickImageFromDevice() async {
+Future<PickedImageFile?> pickImageFromDevice({bool useCamera = false}) async {
   final completer = Completer<PickedImageFile?>();
   final input = html.FileUploadInputElement()..accept = 'image/*';
+  if (useCamera) {
+    input.setAttribute('capture', 'environment');
+  }
   input.click();
 
   input.onChange.listen((event) {
@@ -50,7 +53,7 @@ Future<PickedImageFile?> pickImageFromDevice() async {
         final dataUrl = 'data:$mimeType;base64,$base64Str';
 
         completer.complete(PickedImageFile(
-          name: file.name,
+          name: file.name.isNotEmpty ? file.name : (useCamera ? 'camera_capture.jpg' : 'image.jpg'),
           dataUrl: dataUrl,
           bytes: bytes,
           sizeInBytes: file.size,
@@ -65,4 +68,8 @@ Future<PickedImageFile?> pickImageFromDevice() async {
   });
 
   return completer.future;
+}
+
+Future<PickedImageFile?> pickImageFromCamera() async {
+  return pickImageFromDevice(useCamera: true);
 }

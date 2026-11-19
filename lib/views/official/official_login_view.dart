@@ -227,6 +227,11 @@ class _OfficialLoginViewState extends State<OfficialLoginView> with SingleTicker
                       _usernameController.text = 'cib_supervisor';
                       _passwordController.text = 'police123';
                     }),
+                    _demoPill('cid_investigator', 'CID Intake Officer', () {
+                      _tabController.animateTo(0);
+                      _usernameController.text = 'cid_investigator';
+                      _passwordController.text = 'police123';
+                    }),
                     _demoPill('forensic_expert', 'Forensic Lab Expert', () {
                       _tabController.animateTo(0);
                       _usernameController.text = 'forensic_expert';

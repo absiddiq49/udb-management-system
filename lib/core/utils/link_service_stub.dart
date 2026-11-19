@@ -1,3 +1,6 @@
+import '../../models/udb_record.dart';
+import '../../models/user_session.dart';
+
 class LinkService {
   static Future<bool> launchPhone(String phoneNumber) async {
     return true;
@@ -12,4 +15,10 @@ class LinkService {
   }
 
   static void printPage() {}
+
+  static void printHtmlDocument({required String title, required String htmlContent}) {}
+
+  static void printGazetteNotice(UdbRecord record) {}
+
+  static void printOfficialDossier(UdbRecord record, UserSession session) {}
 }

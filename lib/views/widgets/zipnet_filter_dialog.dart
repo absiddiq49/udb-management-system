@@ -24,6 +24,7 @@ class ZipnetFilterDialog extends StatefulWidget {
 class _ZipnetFilterDialogState extends State<ZipnetFilterDialog> {
   String? _division;
   String? _district;
+  String? _agency;
   final _thanaController = TextEditingController();
   final _gdDateFromController = TextEditingController();
   final _gdDateToController = TextEditingController();
@@ -36,6 +37,7 @@ class _ZipnetFilterDialogState extends State<ZipnetFilterDialog> {
     final f = widget.initialFilters;
     _division = f.division;
     _district = f.district;
+    _agency = f.agency;
     if (f.thana != null) _thanaController.text = f.thana!;
     if (f.dateFrom != null) _gdDateFromController.text = f.dateFrom!;
     if (f.dateTo != null) _gdDateToController.text = f.dateTo!;
@@ -67,6 +69,7 @@ class _ZipnetFilterDialogState extends State<ZipnetFilterDialog> {
     final updated = widget.initialFilters.copyWith(
       division: _division?.isEmpty == true ? null : _division,
       district: _district?.isEmpty == true ? null : _district,
+      agency: _agency == 'all' || _agency?.isEmpty == true ? null : _agency,
       thana: _thanaController.text.trim().isEmpty ? null : _thanaController.text.trim(),
       dateFrom: _gdDateFromController.text.trim().isEmpty ? null : _gdDateFromController.text.trim(),
       dateTo: _gdDateToController.text.trim().isEmpty ? null : _gdDateToController.text.trim(),
@@ -134,6 +137,26 @@ class _ZipnetFilterDialogState extends State<ZipnetFilterDialog> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Law Enforcement Agency Dropdown
+                    _fieldLabel(loc.tr('Investigating Agency / Unit (তদন্তকারী ইউনিট)', 'তদন্তকারী সংস্থা / ইউনিট'), textSec),
+                    DropdownButtonFormField<String>(
+                      initialValue: _agency ?? 'all',
+                      decoration: InputDecoration(hintText: loc.tr('All Agencies (সকল ইউনিট)', 'সকল ইউনিট')),
+                      dropdownColor: cardBg,
+                      items: [
+                        DropdownMenuItem(value: 'all', child: Text(loc.tr('All Agencies (সকল ইউনিট)', 'সকল ইউনিট'))),
+                        DropdownMenuItem(value: 'CID', child: Text(loc.tr('CID Forensics (সিআইডি)', 'সিআইডি ফরেনসিক'))),
+                        DropdownMenuItem(value: 'DMP', child: Text(loc.tr('DMP Metropolitan (ডিএমপি)', 'ডিএমপি ঢাকা'))),
+                        DropdownMenuItem(value: 'PBI', child: Text(loc.tr('PBI Investigation (পিবিআই)', 'পিবিআই তদন্ত ব্যুরো'))),
+                        DropdownMenuItem(value: 'RAB', child: Text(loc.tr('RAB Elite Force (র‍্যাব)', 'র‍্যাব এলিট ফোর্স'))),
+                        DropdownMenuItem(value: 'Railway', child: Text(loc.tr('Railway Police (রেলওয়ে পুলিশ)', 'রেলওয়ে পুলিশ (জিআরপি)'))),
+                        DropdownMenuItem(value: 'Highway', child: Text(loc.tr('Highway Police (হাইওয়ে পুলিশ)', 'হাইওয়ে পুলিশ'))),
+                      ],
+                      onChanged: (val) => setState(() => _agency = val),
+                    ),
+
+                    const SizedBox(height: 14),
+
                     // State / Division Dropdown
                     _fieldLabel(loc.tr('Division / Region (বিভাগ) *', 'বিভাগ (Division) *'), textSec),
                     DropdownButtonFormField<String>(

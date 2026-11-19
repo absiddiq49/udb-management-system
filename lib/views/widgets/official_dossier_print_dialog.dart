@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/link_service.dart';
 import '../../models/udb_record.dart';
 import '../../models/user_session.dart';
 
@@ -52,17 +53,18 @@ class OfficialDossierPrintDialog extends StatelessWidget {
                   const Spacer(),
                   ElevatedButton.icon(
                     onPressed: () {
+                      LinkService.printOfficialDossier(record, session);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
-                            'Dossier ${record.referenceNo} printed with cryptographic watermark [${session.bpNumber}].',
+                            'Printing dossier ${record.referenceNo} with cryptographic watermark [${session.bpNumber}].',
                           ),
                           backgroundColor: AppColors.primary,
                         ),
                       );
                     },
                     icon: const Icon(Icons.print, size: 15),
-                    label: const Text('Print Document'),
+                    label: const Text('Print Document (A4)'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
@@ -125,7 +127,7 @@ class OfficialDossierPrintDialog extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       const Text(
-                        'National Forensic Portal for Deceased Identification (Interpol DVI Standards)',
+                        'National Forensic Portal for Unidentified Dead Body Identification (Interpol DVI Standards)',
                         style: TextStyle(color: Color(0xFF64748B), fontSize: 11),
                       ),
 

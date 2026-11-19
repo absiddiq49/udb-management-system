@@ -115,7 +115,7 @@ class CrossMatchingService {
         reasons.add('Biological sex aligns (${record.gender})');
       } else if (record.gender.toLowerCase() == 'unknown') {
         sexScore = 15;
-        reasons.add('Deceased gender is pending confirmation');
+        reasons.add('Dead body gender is pending confirmation');
       }
       score += sexScore;
 

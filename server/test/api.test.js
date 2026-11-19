@@ -46,7 +46,7 @@ test('requireAuth enforces clearance tiers', async () => {
   const admin = (await login('cib_supervisor')).body.token;
   const run = async (token, tiers) => {
     const res = mockRes(); let passed = false;
-    requireAuth(tiers)({ headers: { authorization: `Bearer ${token}` } }, res, () => { passed = true; });
+    await requireAuth(tiers)({ headers: { authorization: `Bearer ${token}` } }, res, () => { passed = true; });
     return { passed, code: res.code };
   };
   assert.equal((await run(io, [3, 4, 5])).code, 403);

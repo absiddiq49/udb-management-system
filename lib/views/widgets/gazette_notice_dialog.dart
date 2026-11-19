@@ -51,11 +51,25 @@ class GazetteNoticeDialog extends StatelessWidget {
                     ),
                   ),
                   const Spacer(),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                    icon: const Icon(Icons.print, size: 16),
+                    label: const Text('Print Full Gazette (A4)'),
+                    onPressed: () {
+                      LinkService.printGazetteNotice(record);
+                    },
+                  ),
+                  const SizedBox(width: 6),
                   IconButton(
                     icon: Icon(Icons.print_outlined, color: isDark ? AppColors.goldBright : AppColors.primary, size: 20),
                     tooltip: 'Print Official Gazette Notice',
                     onPressed: () {
-                      LinkService.printPage();
+                      LinkService.printGazetteNotice(record);
                     },
                   ),
                   IconButton(
@@ -101,8 +115,8 @@ class GazetteNoticeDialog extends StatelessWidget {
                         border: Border.all(color: AppColors.gold),
                       ),
                       child: const Text(
-                        'বিশেষ গেজেট বিজ্ঞপ্তি: অজ্ঞাতনামা মৃতদেহ সনাক্তকরণ বিজ্ঞপ্তি\n'
-                        'SPECIAL POLICE GAZETTE: UNIDENTIFIED DECEASED IDENTIFICATION NOTICE',
+                        'বিশেষ গেজেট বিজ্ঞপ্তি: অজ্ঞাত মৃতদেহ শনাক্তকরণ বিজ্ঞপ্তি\n'
+                        'SPECIAL POLICE GAZETTE: UNIDENTIFIED DEAD BODY IDENTIFICATION NOTICE',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: AppColors.goldDark,

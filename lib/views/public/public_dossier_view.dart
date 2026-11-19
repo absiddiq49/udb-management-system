@@ -73,7 +73,7 @@ class _PublicDossierViewState extends State<PublicDossierView> {
                       TextButton.icon(
                         onPressed: widget.onBack,
                         icon: const Icon(Icons.arrow_back, size: 16),
-                        label: const Text('Back to Deceased Index'),
+                        label: const Text('Back to Dead Body Index'),
                         style: TextButton.styleFrom(foregroundColor: textSec),
                       ),
                       const SizedBox(width: 8),
@@ -92,8 +92,8 @@ class _PublicDossierViewState extends State<PublicDossierView> {
                       ),
                       IconButton(
                         icon: const Icon(Icons.print_outlined, size: 18, color: AppColors.primary),
-                        tooltip: 'Print Dossier Summary',
-                        onPressed: () => LinkService.printPage(),
+                        tooltip: 'Print Official Gazette Notice (A4)',
+                        onPressed: () => LinkService.printGazetteNotice(record),
                       ),
                     ],
                   ),
@@ -188,7 +188,7 @@ class _PublicDossierViewState extends State<PublicDossierView> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'CID Central Intelligence Bureau • Forensic Deceased Notice',
+                            'CID Central Intelligence Bureau • Forensic Dead Body Notice',
                             style: TextStyle(color: AppColors.gold, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8),
                           ),
                           const SizedBox(height: 4),
@@ -511,7 +511,7 @@ class _PublicDossierViewState extends State<PublicDossierView> {
                         ContactActionPill.email(
                           label: 'Email CID Desk',
                           target: AppConstants.cidEmail,
-                          emailSubject: 'Deceased Identification Lead - Ref: ${record.referenceNo}',
+                          emailSubject: 'Unidentified Dead Body Identification Lead - Ref: ${record.referenceNo}',
                         ),
                       ],
                     ),
